@@ -5,10 +5,12 @@ import { Dashboard } from './components/Dashboard';
 import { LeadsTable } from './components/LeadsTable';
 import { KanbanBoard } from './components/KanbanBoard';
 import { AirtableBanner } from './components/AirtableBanner';
+import { Login } from './components/Login';
 import { Lead, LeadStatus } from './types';
 import { fetchLeads, updateLeadStatus, createLead, updateLead, deleteLead } from './services/airtable';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban'>('dashboard');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,9 +92,17 @@ export default function App() {
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
 
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans antialiased text-gray-900 selection:bg-blue-100 selection:text-blue-900">
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+      <Sidebar 
+        currentView={currentView} 
+        setCurrentView={setCurrentView} 
+        onLogout={() => setIsAuthenticated(false)}
+      />
       
       <main className="flex-1 flex flex-col min-w-0 bg-white">
         <AirtableBanner />

@@ -5,9 +5,10 @@ import { motion } from 'motion/react';
 interface SidebarProps {
   currentView: 'dashboard' | 'table' | 'kanban';
   setCurrentView: (view: 'dashboard' | 'table' | 'kanban') => void;
+  onLogout: () => void;
 }
 
-export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
+export function Sidebar({ currentView, setCurrentView, onLogout }: SidebarProps) {
   const navItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'table', label: 'Leads Table', icon: Users },
@@ -60,7 +61,10 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
           <Settings className="w-4 h-4" />
           Settings
         </button>
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 transition-colors mt-1">
+        <button 
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors mt-1"
+        >
           <LogOut className="w-4 h-4" />
           Log out
         </button>
