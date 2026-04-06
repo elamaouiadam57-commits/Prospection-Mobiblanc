@@ -114,3 +114,84 @@ export const updateLeadStatus = async (leadId: string, newStatus: LeadStatus): P
     throw error;
   }
 };
+
+// Create a new lead in Airtable
+export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
+  if (!isAirtableConfigured()) {
+    const newLead: Lead = {
+      ...leadData,
+      id: `mock-${Date.now()}`,
+      airtableId: `mock-${Date.now()}`,
+      dateAjout: new Date().toISOString(),
+      status: leadData.status || 'Nouveau',
+      prenom: leadData.prenom || '',
+      nom: leadData.nom || 'Inconnu',
+      entreprise: leadData.entreprise || 'Inconnue',
+      mail: leadData.mail || '',
+      scoreLead: 0,
+    } as Lead;
+    console.log('Mock create:', newLead);
+    return newLead;
+  }
+
+  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
+  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
+  const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+
+  try {
+    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${pat}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        records: [
+          {
+            fields: {
+              "Prénom": leadData.prenom,
+              "Nom": leadData.nom,
+              "Entreprise": leadData.entreprise,
+              "Mail": leadData.mail,
+              "Numéro": leadData.numero,
+              "Status": leadData.status || 'Nouveau',
+              "Notes": leadData.notes,
+              "Date d'ajout": new Date().toISOString().split('T')[0],
+            }
+          }
+        ],
+        typecast: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(`Erreur ${response.status}: ${errData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const record = data.records[0];
+    
+    return {
+      id: record.id,
+      airtableId: record.id,
+      dateAjout: record.fields["Date d'ajout"] || new Date().toISOString(),
+      prenom: record.fields["Prénom"] || '',
+      nom: record.fields["Nom"] || 'Inconnu',
+      linkedin: record.fields["Linkedin"] || '',
+      fonction: record.fields["Fonction"] || '',
+      category: record.fields["Category"] || '',
+      entreprise: record.fields["Entreprise"] || 'Inconnue',
+      numero: record.fields["Numéro"] || '',
+      mail: record.fields["Mail"] || '',
+      status: parseStatus(record.fields["Status"]),
+      mailEnvoye: record.fields["Mail envoyé"] || false,
+      notes: record.fields["Notes"] || '',
+      scoreLead: record.fields["Score lead"] || 0,
+      tags: parseTags(record.fields["Tags"] || record.fields["Mots-clés"] || record.fields["Labels"]),
+    };
+  } catch (error) {
+    console.error('Failed to create lead in Airtable:', error);
+    throw error;
+  }
+};

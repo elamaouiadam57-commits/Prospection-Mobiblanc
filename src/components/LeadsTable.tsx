@@ -2,9 +2,11 @@ import { Lead, LeadStatus } from '../types';
 import { motion } from 'motion/react';
 import { cn, formatDateSafe } from '../lib/utils';
 import { useState } from 'react';
+import { LeadFormModal } from './LeadFormModal';
 
 interface LeadsTableProps {
   leads: Lead[];
+  onAddLead: (leadData: Partial<Lead>) => Promise<void>;
 }
 
 function ExpandableNote({ note }: { note: string }) {
@@ -42,7 +44,9 @@ const getStatusColor = (status: string) => {
   return 'bg-gray-100 text-gray-700';
 };
 
-export function LeadsTable({ leads }: LeadsTableProps) {
+export function LeadsTable({ leads, onAddLead }: LeadsTableProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -54,7 +58,10 @@ export function LeadsTable({ leads }: LeadsTableProps) {
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Leads</h1>
           <p className="text-gray-500 mt-1 text-sm">Manage and track your active leads.</p>
         </div>
-        <button className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
+        >
           Add Lead
         </button>
       </div>
@@ -114,6 +121,12 @@ export function LeadsTable({ leads }: LeadsTableProps) {
           </table>
         </div>
       </div>
+
+      <LeadFormModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={onAddLead}
+      />
     </motion.div>
   );
 }

@@ -6,7 +6,7 @@ import { LeadsTable } from './components/LeadsTable';
 import { KanbanBoard } from './components/KanbanBoard';
 import { AirtableBanner } from './components/AirtableBanner';
 import { Lead, LeadStatus } from './types';
-import { fetchLeads, updateLeadStatus } from './services/airtable';
+import { fetchLeads, updateLeadStatus, createLead } from './services/airtable';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban'>('dashboard');
@@ -45,6 +45,16 @@ export default function App() {
       // Revert on failure by re-fetching
       const data = await fetchLeads();
       setLeads(data);
+    }
+  };
+
+  const handleAddLead = async (leadData: Partial<Lead>) => {
+    try {
+      const newLead = await createLead(leadData);
+      setLeads(prev => [newLead, ...prev]);
+    } catch (error) {
+      console.error("Failed to add lead", error);
+      throw error;
     }
   };
 
@@ -101,7 +111,7 @@ export default function App() {
           ) : !error ? (
             <>
               {currentView === 'dashboard' && <Dashboard leads={filteredLeads} />}
-              {currentView === 'table' && <LeadsTable leads={filteredLeads} />}
+              {currentView === 'table' && <LeadsTable leads={filteredLeads} onAddLead={handleAddLead} />}
               {currentView === 'kanban' && <KanbanBoard leads={filteredLeads} onLeadMove={handleLeadMove} />}
             </>
           ) : null}
