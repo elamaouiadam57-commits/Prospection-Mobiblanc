@@ -3,10 +3,14 @@ import { motion } from 'motion/react';
 import { cn, formatDateSafe } from '../lib/utils';
 import { useState } from 'react';
 import { LeadFormModal } from './LeadFormModal';
+import { ConfirmModal } from './ConfirmModal';
+import { Edit2, Trash2 } from 'lucide-react';
 
 interface LeadsTableProps {
   leads: Lead[];
   onAddLead: (leadData: Partial<Lead>) => Promise<void>;
+  onUpdateLead: (leadId: string, leadData: Partial<Lead>) => Promise<void>;
+  onDeleteLead: (leadId: string) => Promise<void>;
 }
 
 function ExpandableNote({ note }: { note: string }) {
@@ -44,8 +48,43 @@ const getStatusColor = (status: string) => {
   return 'bg-gray-100 text-gray-700';
 };
 
-export function LeadsTable({ leads, onAddLead }: LeadsTableProps) {
+export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: LeadsTableProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingLead) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteLead(deletingLead.id);
+      setDeletingLead(null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    // Add a small delay so the modal animation finishes before clearing data
+    setTimeout(() => setEditingLead(null), 200);
+  };
+
+  const handleModalSubmit = async (leadData: Partial<Lead>) => {
+    if (editingLead) {
+      await onUpdateLead(editingLead.id, leadData);
+    } else {
+      await onAddLead(leadData);
+    }
+  };
 
   return (
     <motion.div 
@@ -72,11 +111,13 @@ export function LeadsTable({ leads, onAddLead }: LeadsTableProps) {
             <thead className="bg-gray-50/50 border-b border-gray-200/60 text-gray-500 font-medium">
               <tr>
                 <th className="px-6 py-4">Nom</th>
+                <th className="px-6 py-4">Titre</th>
                 <th className="px-6 py-4">Entreprise</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Tags</th>
                 <th className="px-6 py-4">Notes</th>
                 <th className="px-6 py-4">Date d'ajout</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -87,6 +128,7 @@ export function LeadsTable({ leads, onAddLead }: LeadsTableProps) {
                     <div className="text-gray-500 text-xs mt-0.5">{lead.mail}</div>
                     {lead.numero && <div className="text-gray-400 text-xs mt-0.5">{lead.numero}</div>}
                   </td>
+                  <td className="px-6 py-4 text-gray-600 align-top">{lead.fonction || '-'}</td>
                   <td className="px-6 py-4 text-gray-600 align-top">{lead.entreprise}</td>
                   <td className="px-6 py-4 align-top">
                     <span className={cn("px-2.5 py-1 rounded-md text-xs font-medium", getStatusColor(lead.status))}>
@@ -108,11 +150,29 @@ export function LeadsTable({ leads, onAddLead }: LeadsTableProps) {
                   <td className="px-6 py-4 text-gray-500 align-top">
                     {formatDateSafe(lead.dateAjout, 'MMM d, yyyy')}
                   </td>
+                  <td className="px-6 py-4 align-top text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEdit(lead)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Modifier"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingLead(lead)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {leads.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     No leads found.
                   </td>
                 </tr>
@@ -124,8 +184,18 @@ export function LeadsTable({ leads, onAddLead }: LeadsTableProps) {
 
       <LeadFormModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={onAddLead}
+        onClose={handleModalClose}
+        onSubmit={handleModalSubmit}
+        initialData={editingLead}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingLead}
+        onClose={() => setDeletingLead(null)}
+        onConfirm={handleDelete}
+        title="Supprimer le prospect"
+        message={`Êtes-vous sûr de vouloir supprimer ${deletingLead?.prenom} ${deletingLead?.nom} ? Cette action est irréversible.`}
+        isSubmitting={isDeleting}
       />
     </motion.div>
   );

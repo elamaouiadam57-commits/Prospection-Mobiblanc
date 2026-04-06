@@ -6,7 +6,7 @@ import { LeadsTable } from './components/LeadsTable';
 import { KanbanBoard } from './components/KanbanBoard';
 import { AirtableBanner } from './components/AirtableBanner';
 import { Lead, LeadStatus } from './types';
-import { fetchLeads, updateLeadStatus, createLead } from './services/airtable';
+import { fetchLeads, updateLeadStatus, createLead, updateLead, deleteLead } from './services/airtable';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban'>('dashboard');
@@ -54,6 +54,26 @@ export default function App() {
       setLeads(prev => [newLead, ...prev]);
     } catch (error) {
       console.error("Failed to add lead", error);
+      throw error;
+    }
+  };
+
+  const handleUpdateLead = async (leadId: string, leadData: Partial<Lead>) => {
+    try {
+      await updateLead(leadId, leadData);
+      setLeads(prev => prev.map(lead => lead.id === leadId ? { ...lead, ...leadData } : lead));
+    } catch (error) {
+      console.error("Failed to update lead", error);
+      throw error;
+    }
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    try {
+      await deleteLead(leadId);
+      setLeads(prev => prev.filter(lead => lead.id !== leadId));
+    } catch (error) {
+      console.error("Failed to delete lead", error);
       throw error;
     }
   };
@@ -111,8 +131,22 @@ export default function App() {
           ) : !error ? (
             <>
               {currentView === 'dashboard' && <Dashboard leads={filteredLeads} />}
-              {currentView === 'table' && <LeadsTable leads={filteredLeads} onAddLead={handleAddLead} />}
-              {currentView === 'kanban' && <KanbanBoard leads={filteredLeads} onLeadMove={handleLeadMove} />}
+              {currentView === 'table' && (
+                <LeadsTable 
+                  leads={filteredLeads} 
+                  onAddLead={handleAddLead} 
+                  onUpdateLead={handleUpdateLead}
+                  onDeleteLead={handleDeleteLead}
+                />
+              )}
+              {currentView === 'kanban' && (
+                <KanbanBoard 
+                  leads={filteredLeads} 
+                  onLeadMove={handleLeadMove} 
+                  onUpdateLead={handleUpdateLead}
+                  onDeleteLead={handleDeleteLead}
+                />
+              )}
             </>
           ) : null}
         </div>

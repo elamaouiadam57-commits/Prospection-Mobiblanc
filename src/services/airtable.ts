@@ -151,6 +151,7 @@ export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
             fields: {
               "Prénom": leadData.prenom,
               "Nom": leadData.nom,
+              "Fonction": leadData.fonction,
               "Entreprise": leadData.entreprise,
               "Mail": leadData.mail,
               "Numéro": leadData.numero,
@@ -192,6 +193,76 @@ export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
     };
   } catch (error) {
     console.error('Failed to create lead in Airtable:', error);
+    throw error;
+  }
+};
+
+// Update a lead's full data in Airtable
+export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promise<void> => {
+  if (!isAirtableConfigured()) {
+    console.log(`Mock update full: Lead ${leadId}`, leadData);
+    return;
+  }
+
+  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
+  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
+  const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+
+  try {
+    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${pat}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fields: {
+          ...(leadData.prenom !== undefined && { "Prénom": leadData.prenom }),
+          ...(leadData.nom !== undefined && { "Nom": leadData.nom }),
+          ...(leadData.fonction !== undefined && { "Fonction": leadData.fonction }),
+          ...(leadData.entreprise !== undefined && { "Entreprise": leadData.entreprise }),
+          ...(leadData.mail !== undefined && { "Mail": leadData.mail }),
+          ...(leadData.numero !== undefined && { "Numéro": leadData.numero }),
+          ...(leadData.status !== undefined && { "Status": leadData.status }),
+          ...(leadData.notes !== undefined && { "Notes": leadData.notes }),
+        },
+        typecast: true,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Airtable API error: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Failed to update Airtable:', error);
+    throw error;
+  }
+};
+
+// Delete a lead in Airtable
+export const deleteLead = async (leadId: string): Promise<void> => {
+  if (!isAirtableConfigured()) {
+    console.log(`Mock delete: Lead ${leadId}`);
+    return;
+  }
+
+  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
+  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
+  const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+
+  try {
+    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${pat}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Airtable API error: ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Failed to delete from Airtable:', error);
     throw error;
   }
 };

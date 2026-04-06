@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { Lead } from '../types';
@@ -7,19 +7,48 @@ interface LeadFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (leadData: Partial<Lead>) => Promise<void>;
+  initialData?: Lead | null;
 }
 
-export function LeadFormModal({ isOpen, onClose, onSubmit }: LeadFormModalProps) {
+export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
+    fonction: '',
     entreprise: '',
     mail: '',
     numero: '',
     status: 'Nouveau',
     notes: '',
   });
+
+  useEffect(() => {
+    if (initialData && isOpen) {
+      setFormData({
+        prenom: initialData.prenom || '',
+        nom: initialData.nom || '',
+        fonction: initialData.fonction || '',
+        entreprise: initialData.entreprise || '',
+        mail: initialData.mail || '',
+        numero: initialData.numero || '',
+        status: initialData.status || 'Nouveau',
+        notes: initialData.notes || '',
+      });
+    } else if (!isOpen) {
+      // Reset when closed
+      setFormData({
+        prenom: '',
+        nom: '',
+        fonction: '',
+        entreprise: '',
+        mail: '',
+        numero: '',
+        status: 'Nouveau',
+        notes: '',
+      });
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +90,9 @@ export function LeadFormModal({ isOpen, onClose, onSubmit }: LeadFormModalProps)
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-xl z-50 overflow-hidden"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Ajouter un prospect</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {initialData ? 'Modifier le prospect' : 'Ajouter un prospect'}
+              </h2>
               <button
                 onClick={onClose}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -96,16 +127,28 @@ export function LeadFormModal({ isOpen, onClose, onSubmit }: LeadFormModalProps)
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Entreprise</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.entreprise}
-                  onChange={e => setFormData({ ...formData, entreprise: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-                  placeholder="Acme Corp"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Titre / Fonction</label>
+                  <input
+                    type="text"
+                    value={formData.fonction}
+                    onChange={e => setFormData({ ...formData, fonction: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                    placeholder="CEO"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Entreprise</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.entreprise}
+                    onChange={e => setFormData({ ...formData, entreprise: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                    placeholder="Acme Corp"
+                  />
+                </div>
               </div>
 
               <div>
@@ -157,7 +200,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit }: LeadFormModalProps)
                   {isSubmitting && (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   )}
-                  Ajouter
+                  {initialData ? 'Enregistrer' : 'Ajouter'}
                 </button>
               </div>
             </form>

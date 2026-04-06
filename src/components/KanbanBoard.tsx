@@ -17,16 +17,19 @@ import { CSS } from '@dnd-kit/utilities';
 import { useState, useMemo } from 'react';
 import type { Key } from 'react';
 import { cn, formatDateSafe } from '../lib/utils';
+import { Edit2, Trash2 } from 'lucide-react';
 
 const DEFAULT_COLUMNS: string[] = ['Nouveau', 'Contacté', 'Qualifié', 'Proposition', 'Gagné', 'Perdu'];
 
 interface KanbanBoardProps {
   leads: Lead[];
   onLeadMove: (leadId: string, newStatus: string) => void;
+  onUpdateLead: (leadId: string, leadData: Partial<Lead>) => Promise<void>;
+  onDeleteLead: (leadId: string) => Promise<void>;
 }
 
 // Sortable Item Component
-function SortableLeadCard({ lead }: { lead: Lead, key?: Key }) {
+function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lead: Lead) => void, onDelete: (lead: Lead) => void, key?: Key }) {
   const {
     attributes,
     listeners,
@@ -67,7 +70,24 @@ function SortableLeadCard({ lead }: { lead: Lead, key?: Key }) {
     >
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-medium text-gray-900 text-sm">{lead.prenom} {lead.nom}</h4>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
+            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            title="Modifier"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
+            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            title="Supprimer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
+      <p className="text-xs text-gray-600 font-medium mb-0.5">{lead.fonction || 'Sans titre'}</p>
       <p className="text-xs text-gray-500 mb-3">{lead.entreprise}</p>
       
       {lead.tags && lead.tags.length > 0 && (
@@ -87,8 +107,44 @@ function SortableLeadCard({ lead }: { lead: Lead, key?: Key }) {
   );
 }
 
-export function KanbanBoard({ leads, onLeadMove }: KanbanBoardProps) {
+import { LeadFormModal } from './LeadFormModal';
+import { ConfirmModal } from './ConfirmModal';
+
+export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: KanbanBoardProps) {
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingLead) return;
+    setIsDeleting(true);
+    try {
+      await onDeleteLead(deletingLead.id);
+      setDeletingLead(null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setEditingLead(null), 200);
+  };
+
+  const handleModalSubmit = async (leadData: Partial<Lead>) => {
+    if (editingLead) {
+      await onUpdateLead(editingLead.id, leadData);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -211,7 +267,9 @@ export function KanbanBoard({ leads, onLeadMove }: KanbanBoardProps) {
               <Column 
                 key={colStatus} 
                 status={colStatus} 
-                leads={cols[colStatus] || []} 
+                leads={cols[colStatus] || []}
+                onEdit={handleEdit}
+                onDelete={setDeletingLead}
               />
             ))}
           </div>
@@ -222,6 +280,7 @@ export function KanbanBoard({ leads, onLeadMove }: KanbanBoardProps) {
                 <div className="flex justify-between items-start mb-2">
                   <h4 className="font-medium text-gray-900 text-sm">{activeLead.prenom} {activeLead.nom}</h4>
                 </div>
+                <p className="text-xs text-gray-600 font-medium mb-0.5">{activeLead.fonction || 'Sans titre'}</p>
                 <p className="text-xs text-gray-500 mb-3">{activeLead.entreprise}</p>
                 {activeLead.tags && activeLead.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
@@ -237,6 +296,22 @@ export function KanbanBoard({ leads, onLeadMove }: KanbanBoardProps) {
           </DragOverlay>
         </DndContext>
       </div>
+
+      <LeadFormModal 
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSubmit={handleModalSubmit}
+        initialData={editingLead}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingLead}
+        onClose={() => setDeletingLead(null)}
+        onConfirm={handleDelete}
+        title="Supprimer le prospect"
+        message={`Êtes-vous sûr de vouloir supprimer ${deletingLead?.prenom} ${deletingLead?.nom} ? Cette action est irréversible.`}
+        isSubmitting={isDeleting}
+      />
     </motion.div>
   );
 }
@@ -244,7 +319,7 @@ export function KanbanBoard({ leads, onLeadMove }: KanbanBoardProps) {
 // Column Component
 import { useDroppable } from '@dnd-kit/core';
 
-function Column({ status, leads }: { status: string, leads: Lead[], key?: Key }) {
+function Column({ status, leads, onEdit, onDelete }: { status: string, leads: Lead[], onEdit: (lead: Lead) => void, onDelete: (lead: Lead) => void, key?: Key }) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -274,7 +349,7 @@ function Column({ status, leads }: { status: string, leads: Lead[], key?: Key })
         <SortableContext items={leads.map(l => l.id)}>
           <div className="flex flex-col gap-3 min-h-[100px]">
             {leads.map((lead) => (
-              <SortableLeadCard key={lead.id} lead={lead} />
+              <SortableLeadCard key={lead.id} lead={lead} onEdit={onEdit} onDelete={onDelete} />
             ))}
           </div>
         </SortableContext>
