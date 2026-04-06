@@ -21,14 +21,14 @@ function ExpandableNote({ note }: { note: string }) {
   const isLong = note.length > 60;
 
   return (
-    <div className="text-sm text-gray-500 max-w-xs">
+    <div className="text-sm text-slate-400 max-w-xs">
       <div className={cn("transition-all", !isExpanded && isLong && "line-clamp-2")}>
         {note}
       </div>
       {isLong && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-blue-600 hover:text-blue-800 text-[11px] mt-1 font-medium transition-colors"
+          className="text-blue-400 hover:text-blue-300 text-[11px] mt-1 font-medium transition-colors"
         >
           {isExpanded ? 'Voir moins' : 'Voir plus'}
         </button>
@@ -39,13 +39,13 @@ function ExpandableNote({ note }: { note: string }) {
 
 const getStatusColor = (status: string) => {
   const s = status.toLowerCase();
-  if (s.includes('nouveau') || s.includes('new') || s.includes('interested')) return 'bg-blue-100 text-blue-700';
-  if (s.includes('contact')) return 'bg-purple-100 text-purple-700';
-  if (s.includes('qualif') || s.includes('reply') || s.includes('attente')) return 'bg-amber-100 text-amber-700';
-  if (s.includes('prop')) return 'bg-indigo-100 text-indigo-700';
-  if (s.includes('gagn') || s.includes('won') || s.includes('success')) return 'bg-emerald-100 text-emerald-700';
-  if (s.includes('perdu') || s.includes('lost') || s.includes('fail')) return 'bg-rose-100 text-rose-700';
-  return 'bg-gray-100 text-gray-700';
+  if (s.includes('nouveau') || s.includes('new') || s.includes('interested')) return 'bg-blue-500/10 text-blue-400';
+  if (s.includes('contact')) return 'bg-purple-500/10 text-purple-400';
+  if (s.includes('qualif') || s.includes('reply') || s.includes('attente')) return 'bg-amber-500/10 text-amber-400';
+  if (s.includes('prop')) return 'bg-indigo-500/10 text-indigo-400';
+  if (s.includes('gagn') || s.includes('won') || s.includes('success')) return 'bg-emerald-500/10 text-emerald-400';
+  if (s.includes('perdu') || s.includes('lost') || s.includes('fail')) return 'bg-rose-500/10 text-rose-400';
+  return 'bg-slate-800 text-slate-400';
 };
 
 export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: LeadsTableProps) {
@@ -94,21 +94,21 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
     >
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Leads</h1>
-          <p className="text-gray-500 mt-1 text-sm">Manage and track your active leads.</p>
+          <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Leads</h1>
+          <p className="text-slate-400 mt-1 text-sm">Manage and track your active leads.</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
         >
           Add Lead
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] overflow-hidden">
+      <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg shadow-black/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50/50 border-b border-gray-200/60 text-gray-500 font-medium">
+            <thead className="bg-slate-900/50 border-b border-slate-700 text-slate-400 font-medium">
               <tr>
                 <th className="px-6 py-4">Nom</th>
                 <th className="px-6 py-4">Titre</th>
@@ -120,16 +120,16 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-700/50">
               {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr key={lead.id} className="hover:bg-slate-700/50 transition-colors group">
                   <td className="px-6 py-4 align-top">
-                    <div className="font-medium text-gray-900">{lead.prenom} {lead.nom}</div>
-                    <div className="text-gray-500 text-xs mt-0.5">{lead.mail}</div>
-                    {lead.numero && <div className="text-gray-400 text-xs mt-0.5">{lead.numero}</div>}
+                    <div className="font-medium text-slate-50">{lead.prenom} {lead.nom}</div>
+                    <div className="text-slate-400 text-xs mt-0.5">{lead.mail}</div>
+                    {lead.numero && <div className="text-slate-500 text-xs mt-0.5">{lead.numero}</div>}
                   </td>
-                  <td className="px-6 py-4 text-gray-600 align-top">{lead.fonction || '-'}</td>
-                  <td className="px-6 py-4 text-gray-600 align-top">{lead.entreprise}</td>
+                  <td className="px-6 py-4 text-slate-300 align-top">{lead.fonction || '-'}</td>
+                  <td className="px-6 py-4 text-slate-300 align-top">{lead.entreprise}</td>
                   <td className="px-6 py-4 align-top">
                     <span className={cn("px-2.5 py-1 rounded-md text-xs font-medium", getStatusColor(lead.status))}>
                       {lead.status}
@@ -138,7 +138,7 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                   <td className="px-6 py-4 align-top">
                     <div className="flex flex-wrap gap-1">
                       {lead.tags?.map(tag => (
-                        <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-md font-medium">
+                        <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded-md font-medium">
                           {tag}
                         </span>
                       ))}
@@ -147,21 +147,21 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                   <td className="px-6 py-4 align-top">
                     <ExpandableNote note={lead.notes} />
                   </td>
-                  <td className="px-6 py-4 text-gray-500 align-top">
+                  <td className="px-6 py-4 text-slate-400 align-top">
                     {formatDateSafe(lead.dateAjout, 'MMM d, yyyy')}
                   </td>
                   <td className="px-6 py-4 align-top text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(lead)}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-colors"
                         title="Modifier"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setDeletingLead(lead)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
                         title="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -172,7 +172,7 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
               ))}
               {leads.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     No leads found.
                   </td>
                 </tr>

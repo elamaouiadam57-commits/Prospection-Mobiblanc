@@ -55,7 +55,7 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lea
       <div
         ref={setNodeRef}
         style={style}
-        className="bg-white/50 border-2 border-dashed border-blue-400 rounded-xl p-4 h-[120px] opacity-50"
+        className="bg-slate-800/50 border-2 border-dashed border-blue-500/50 rounded-xl p-4 h-[120px] opacity-50"
       />
     );
   }
@@ -66,41 +66,41 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lea
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white p-4 rounded-xl border border-gray-200/60 shadow-sm hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing group"
+      className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm hover:shadow-lg hover:shadow-black/20 transition-all cursor-grab active:cursor-grabbing group"
     >
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-medium text-gray-900 text-sm">{lead.prenom} {lead.nom}</h4>
+        <h4 className="font-medium text-slate-50 text-sm">{lead.prenom} {lead.nom}</h4>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
-            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="p-1 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
             title="Modifier"
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
-            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="p-1 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
             title="Supprimer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-      <p className="text-xs text-gray-600 font-medium mb-0.5">{lead.fonction || 'Sans titre'}</p>
-      <p className="text-xs text-gray-500 mb-3">{lead.entreprise}</p>
+      <p className="text-xs text-slate-300 font-medium mb-0.5">{lead.fonction || 'Sans titre'}</p>
+      <p className="text-xs text-slate-400 mb-3">{lead.entreprise}</p>
       
       {lead.tags && lead.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-3">
           {lead.tags.map(tag => (
-            <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md font-medium border border-blue-100/50">
+            <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-md font-medium border border-blue-500/20">
               {tag}
             </span>
           ))}
         </div>
       )}
 
-      <div className="flex justify-between items-center text-[10px] text-gray-400">
+      <div className="flex justify-between items-center text-[10px] text-slate-500">
         <span>{formatDateSafe(lead.dateAjout, 'MMM d')}</span>
       </div>
     </div>
@@ -250,8 +250,8 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
       className="p-8 h-[calc(100vh-4rem)] flex flex-col"
     >
       <div className="mb-6 shrink-0">
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Pipeline</h1>
-        <p className="text-gray-500 mt-1 text-sm">Drag and drop leads to update their status.</p>
+        <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Pipeline</h1>
+        <p className="text-slate-400 mt-1 text-sm">Drag and drop leads to update their status.</p>
       </div>
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
@@ -276,16 +276,16 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
 
           <DragOverlay>
             {activeLead ? (
-              <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-xl opacity-90 rotate-2 scale-105">
+              <div className="bg-slate-800 p-4 rounded-xl border border-blue-500/50 shadow-2xl shadow-black/50 opacity-90 rotate-2 scale-105">
                 <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-medium text-gray-900 text-sm">{activeLead.prenom} {activeLead.nom}</h4>
+                  <h4 className="font-medium text-slate-50 text-sm">{activeLead.prenom} {activeLead.nom}</h4>
                 </div>
-                <p className="text-xs text-gray-600 font-medium mb-0.5">{activeLead.fonction || 'Sans titre'}</p>
-                <p className="text-xs text-gray-500 mb-3">{activeLead.entreprise}</p>
+                <p className="text-xs text-slate-300 font-medium mb-0.5">{activeLead.fonction || 'Sans titre'}</p>
+                <p className="text-xs text-slate-400 mb-3">{activeLead.entreprise}</p>
                 {activeLead.tags && activeLead.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
                     {activeLead.tags.map(tag => (
-                      <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md font-medium border border-blue-100/50">
+                      <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded-md font-medium border border-blue-500/20">
                         {tag}
                       </span>
                     ))}
@@ -332,8 +332,8 @@ function Column({ status, leads, onEdit, onDelete }: { status: string, leads: Le
     <div className="flex flex-col w-72 shrink-0 h-full max-h-full">
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-gray-900 text-sm">{status}</h3>
-          <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full font-medium">
+          <h3 className="font-medium text-slate-50 text-sm">{status}</h3>
+          <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded-full font-medium">
             {leads.length}
           </span>
         </div>
@@ -342,8 +342,8 @@ function Column({ status, leads, onEdit, onDelete }: { status: string, leads: Le
       <div 
         ref={setNodeRef}
         className={cn(
-          "flex-1 bg-gray-50/80 rounded-2xl p-3 overflow-y-auto border border-transparent transition-colors",
-          isOver && "bg-blue-50/50 border-blue-200"
+          "flex-1 bg-slate-900/50 rounded-2xl p-3 overflow-y-auto border border-transparent transition-colors",
+          isOver && "bg-blue-500/5 border-blue-500/30"
         )}
       >
         <SortableContext items={leads.map(l => l.id)}>
