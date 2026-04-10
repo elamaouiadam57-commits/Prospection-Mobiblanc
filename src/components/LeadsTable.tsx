@@ -90,9 +90,9 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-8 max-w-7xl mx-auto"
+      className="p-8 h-full flex flex-col max-w-7xl mx-auto w-full"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 shrink-0">
         <div>
           <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Leads</h1>
           <p className="text-slate-400 mt-1 text-sm">Manage and track your active leads.</p>
@@ -105,10 +105,10 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
         </button>
       </div>
 
-      <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg shadow-black/10 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900/50 border-b border-slate-700 text-slate-400 font-medium">
+      <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg shadow-black/10 flex flex-col min-h-0 flex-1 overflow-hidden">
+        <div className="overflow-auto flex-1">
+          <table className="w-full text-left text-sm relative">
+            <thead className="bg-slate-900/95 backdrop-blur-md border-b border-slate-700 text-slate-400 font-medium sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-4">Nom</th>
                 <th className="px-6 py-4">Titre</th>

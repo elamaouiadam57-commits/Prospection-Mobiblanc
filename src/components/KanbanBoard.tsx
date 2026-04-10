@@ -247,7 +247,7 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-8 h-[calc(100vh-4rem)] flex flex-col"
+      className="p-8 h-full flex flex-col"
     >
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Pipeline</h1>

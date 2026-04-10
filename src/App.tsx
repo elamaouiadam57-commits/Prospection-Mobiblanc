@@ -113,7 +113,7 @@ export default function App() {
           setSortOrder={setSortOrder}
         />
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-hidden flex flex-col">
           {error && (
             <div className="m-8 p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400">
               <h3 className="text-lg font-semibold flex items-center gap-2">
