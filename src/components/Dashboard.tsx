@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lead } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Target, Building2, UserCheck, ChevronDown } from 'lucide-react';
+import { Users, Target, Building2, UserCheck, ChevronDown, Clock } from 'lucide-react';
 
 interface DashboardProps {
   leads: Lead[];
@@ -50,6 +50,11 @@ export function Dashboard({ leads }: DashboardProps) {
 
   // Sort companies by number of leads (descending)
   const sortedCompanies = Array.from(companiesMap.entries()).sort((a, b) => b[1].length - a[1].length);
+
+  // Recent activity (last 10 added leads)
+  const recentActivity = [...leads]
+    .sort((a, b) => new Date(b.dateAjout).getTime() - new Date(a.dateAjout).getTime())
+    .slice(0, 15);
 
   const toggleCompany = (companyName: string) => {
     setExpandedCompany(prev => prev === companyName ? null : companyName);
@@ -169,9 +174,38 @@ export function Dashboard({ leads }: DashboardProps) {
             </div>
           </div>
           <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg shadow-black/10 h-[500px] flex flex-col">
-            <h3 className="font-medium text-slate-50 mb-4">Activité récente</h3>
-            <div className="flex-1 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center bg-slate-900/50">
-              <p className="text-sm text-slate-500">Flux d'activité à venir</p>
+            <h3 className="font-medium text-slate-50 mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-400" />
+              Activité récente
+            </h3>
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+              {recentActivity.map(lead => (
+                <div key={lead.id} className="relative pl-4 border-l-2 border-slate-700 pb-4 last:pb-0 last:border-transparent">
+                  <div className="absolute w-2.5 h-2.5 bg-blue-500 rounded-full -left-[6px] top-1.5 ring-4 ring-slate-800" />
+                  <p className="text-sm text-slate-300">
+                    <span className="font-medium text-slate-100">{lead.prenom} {lead.nom}</span> a été ajouté(e).
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {new Date(lead.dateAjout).toLocaleDateString('fr-FR', { 
+                      day: 'numeric', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    })}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium border ${getStatusColor(lead.status)}`}>
+                      {lead.status}
+                    </span>
+                    {lead.entreprise && (
+                      <span className="text-xs text-slate-400">chez {lead.entreprise}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {recentActivity.length === 0 && (
+                <div className="h-full flex items-center justify-center text-slate-500 text-sm">
+                  Aucune activité récente.
+                </div>
+              )}
             </div>
           </div>
         </div>
