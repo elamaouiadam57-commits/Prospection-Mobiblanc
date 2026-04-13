@@ -4,6 +4,7 @@ export const MOCK_LEADS: Lead[] = [
   {
     id: '1',
     dateAjout: '2026-04-05T10:30:00Z',
+    dateContact: '',
     prenom: 'Sarah',
     nom: 'Jenkins',
     linkedin: 'linkedin.com/in/sjenkins',
@@ -20,6 +21,7 @@ export const MOCK_LEADS: Lead[] = [
   {
     id: '2',
     dateAjout: '2026-04-04T14:15:00Z',
+    dateContact: '2026-04-06T10:00:00Z',
     prenom: 'Marcus',
     nom: 'Chen',
     linkedin: 'linkedin.com/in/mchen',
@@ -36,6 +38,7 @@ export const MOCK_LEADS: Lead[] = [
   {
     id: '3',
     dateAjout: '2026-04-02T09:00:00Z',
+    dateContact: '2026-04-03T11:30:00Z',
     prenom: 'Elena',
     nom: 'Rodriguez',
     linkedin: 'linkedin.com/in/erodriguez',

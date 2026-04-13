@@ -4,6 +4,7 @@ import { TopBar } from './components/TopBar';
 import { Dashboard } from './components/Dashboard';
 import { LeadsTable } from './components/LeadsTable';
 import { KanbanBoard } from './components/KanbanBoard';
+import { Reports } from './components/Reports';
 import { AirtableBanner } from './components/AirtableBanner';
 import { Login } from './components/Login';
 import { Lead, LeadStatus } from './types';
@@ -11,7 +12,7 @@ import { fetchLeads, updateLeadStatus, createLead, updateLead, deleteLead } from
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban' | 'reports'>('dashboard');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -35,13 +36,26 @@ export default function App() {
   }, []);
 
   const handleLeadMove = async (leadId: string, newStatus: LeadStatus) => {
+    const lead = leads.find(l => l.id === leadId);
+    const isContacted = !newStatus.toLowerCase().includes('nouveau') && !newStatus.toLowerCase().includes('new');
+    const needsDateContact = isContacted && lead && !lead.dateContact;
+    const newDateContact = needsDateContact ? new Date().toISOString() : lead?.dateContact;
+
     // Optimistic UI update
     setLeads(prev => prev.map(lead => 
-      lead.id === leadId ? { ...lead, status: newStatus } : lead
+      lead.id === leadId ? { 
+        ...lead, 
+        status: newStatus,
+        ...(needsDateContact && { dateContact: newDateContact })
+      } : lead
     ));
 
     try {
-      await updateLeadStatus(leadId, newStatus);
+      if (needsDateContact) {
+        await updateLead(leadId, { status: newStatus, dateContact: newDateContact });
+      } else {
+        await updateLeadStatus(leadId, newStatus);
+      }
     } catch (error) {
       console.error("Failed to update lead status in Airtable", error);
       // Revert on failure by re-fetching
@@ -62,8 +76,18 @@ export default function App() {
 
   const handleUpdateLead = async (leadId: string, leadData: Partial<Lead>) => {
     try {
-      await updateLead(leadId, leadData);
-      setLeads(prev => prev.map(lead => lead.id === leadId ? { ...lead, ...leadData } : lead));
+      const lead = leads.find(l => l.id === leadId);
+      let updatedData = { ...leadData };
+      
+      if (leadData.status) {
+        const isContacted = !leadData.status.toLowerCase().includes('nouveau') && !leadData.status.toLowerCase().includes('new');
+        if (isContacted && lead && !lead.dateContact && !leadData.dateContact) {
+          updatedData.dateContact = new Date().toISOString();
+        }
+      }
+
+      await updateLead(leadId, updatedData);
+      setLeads(prev => prev.map(lead => lead.id === leadId ? { ...lead, ...updatedData } : lead));
     } catch (error) {
       console.error("Failed to update lead", error);
       throw error;
@@ -157,6 +181,7 @@ export default function App() {
                   onDeleteLead={handleDeleteLead}
                 />
               )}
+              {currentView === 'reports' && <Reports leads={filteredLeads} />}
             </>
           ) : null}
         </div>

@@ -4,6 +4,7 @@ export interface Lead {
   id: string;
   airtableId?: string;
   dateAjout: string;
+  dateContact?: string;
   prenom: string;
   nom: string;
   linkedin: string;
