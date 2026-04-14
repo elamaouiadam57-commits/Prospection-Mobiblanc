@@ -1,13 +1,22 @@
 import { useMemo } from 'react';
 import { Lead } from '../types';
 import { motion } from 'motion/react';
-import { BarChart3, TrendingUp, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { 
+  Users, 
+  UserPlus, 
+  CheckCircle2, 
+  Calendar, 
+  TrendingUp,
+  Clock,
+  Building2
+} from 'lucide-react';
 
 interface ReportsProps {
   leads: Lead[];
 }
 
 export function Reports({ leads }: ReportsProps) {
+  // Helpers for status checks
   const isWon = (s: string) => {
     const lower = s.toLowerCase();
     return lower.includes('gagn') || lower.includes('won') || lower.includes('success');
@@ -18,199 +27,243 @@ export function Reports({ leads }: ReportsProps) {
     return !lower.includes('nouveau') && !lower.includes('new');
   };
 
-  // Helper to get start of week (Monday)
+  // Helper to parse date safely in local timezone
+  const parseDateLocal = (dateStr: string) => {
+    if (!dateStr) return new Date(0);
+    try {
+      if (dateStr.includes('T')) {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? new Date(0) : d;
+      }
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return new Date(0);
+      const [y, m, d] = parts.map(Number);
+      const parsed = new Date(y, m - 1, d);
+      return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+    } catch (e) {
+      return new Date(0);
+    }
+  };
+
+  // Get start of current week (Monday)
   const getStartOfWeek = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
     d.setHours(0, 0, 0, 0);
     return d;
   };
 
   const now = new Date();
-  const startOfThisWeek = getStartOfWeek(now);
-  const startOfLastWeek = new Date(startOfThisWeek);
-  startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-  const endOfLastWeek = new Date(startOfThisWeek);
-  endOfLastWeek.setMilliseconds(-1);
+  const startOfWeek = getStartOfWeek(now);
 
-  const stats = useMemo(() => {
-    const thisWeekLeads = leads.filter(l => new Date(l.dateAjout) >= startOfThisWeek);
-    const lastWeekLeads = leads.filter(l => {
-      const d = new Date(l.dateAjout);
-      return d >= startOfLastWeek && d <= endOfLastWeek;
+  // Calculate stats for THIS WEEK
+  const thisWeekStats = useMemo(() => {
+    const added = leads.filter(l => parseDateLocal(l.dateAjout) >= startOfWeek);
+    const contacted = leads.filter(l => {
+      const d = l.dateContact ? parseDateLocal(l.dateContact) : parseDateLocal(l.dateAjout);
+      return d >= startOfWeek && isContacted(l.status);
     });
-
-    const thisWeekContacted = leads.filter(l => {
-      const d = l.dateContact ? new Date(l.dateContact) : new Date(l.dateAjout);
-      return d >= startOfThisWeek && isContacted(l.status);
+    const won = leads.filter(l => {
+      const d = l.dateContact ? parseDateLocal(l.dateContact) : parseDateLocal(l.dateAjout);
+      return d >= startOfWeek && isWon(l.status);
     });
-    const lastWeekContacted = leads.filter(l => {
-      const d = l.dateContact ? new Date(l.dateContact) : new Date(l.dateAjout);
-      return d >= startOfLastWeek && d <= endOfLastWeek && isContacted(l.status);
-    });
-
-    const thisWeekWon = leads.filter(l => {
-      // Assuming if they are won, and their dateContact/dateAjout is this week
-      const d = l.dateContact ? new Date(l.dateContact) : new Date(l.dateAjout);
-      return d >= startOfThisWeek && isWon(l.status);
-    });
-    const lastWeekWon = leads.filter(l => {
-      const d = l.dateContact ? new Date(l.dateContact) : new Date(l.dateAjout);
-      return d >= startOfLastWeek && d <= endOfLastWeek && isWon(l.status);
-    });
-
-    const calcTrend = (current: number, previous: number) => {
-      if (previous === 0) return current > 0 ? 100 : 0;
-      return Math.round(((current - previous) / previous) * 100);
-    };
 
     return {
-      added: {
-        current: thisWeekLeads.length,
-        previous: lastWeekLeads.length,
-        trend: calcTrend(thisWeekLeads.length, lastWeekLeads.length)
-      },
-      contacted: {
-        current: thisWeekContacted.length,
-        previous: lastWeekContacted.length,
-        trend: calcTrend(thisWeekContacted.length, lastWeekContacted.length)
-      },
-      won: {
-        current: thisWeekWon.length,
-        previous: lastWeekWon.length,
-        trend: calcTrend(thisWeekWon.length, lastWeekWon.length)
-      }
+      added: added.length,
+      contacted: contacted.length,
+      won: won.length,
+      total: leads.length
     };
-  }, [leads, startOfThisWeek, startOfLastWeek, endOfLastWeek]);
+  }, [leads, startOfWeek]);
 
-  const contactedLeads = useMemo(() => {
+  // Group activity by day for this week (Added OR Contacted)
+  const dailyActivity = useMemo(() => {
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const counts = new Array(7).fill(0);
+    
+    leads.forEach(l => {
+      // Prioritize contact date as requested
+      const d = l.dateContact ? parseDateLocal(l.dateContact) : parseDateLocal(l.dateAjout);
+      if (d >= startOfWeek) {
+        // Get day index (0 = Monday, 6 = Sunday)
+        let dayIdx = d.getDay() - 1;
+        if (dayIdx === -1) dayIdx = 6; // Sunday
+        if (dayIdx >= 0 && dayIdx < 7) {
+          counts[dayIdx]++;
+        }
+      }
+    });
+
+    const max = Math.max(...counts, 1);
+    return days.map((name, i) => ({
+      name,
+      count: counts[i],
+      percent: (counts[i] / max) * 100
+    }));
+  }, [leads, startOfWeek]);
+
+  // Recent activity list (this week only)
+  const weeklyLeads = useMemo(() => {
     return leads
-      .filter(l => isContacted(l.status))
+      .filter(l => {
+        const dAjout = parseDateLocal(l.dateAjout);
+        const dContact = l.dateContact ? parseDateLocal(l.dateContact) : new Date(0);
+        return dAjout >= startOfWeek || dContact >= startOfWeek;
+      })
       .sort((a, b) => {
-        const dateA = a.dateContact ? new Date(a.dateContact).getTime() : new Date(a.dateAjout).getTime();
-        const dateB = b.dateContact ? new Date(b.dateContact).getTime() : new Date(b.dateAjout).getTime();
+        const dateA = Math.max(parseDateLocal(a.dateAjout).getTime(), a.dateContact ? parseDateLocal(a.dateContact).getTime() : 0);
+        const dateB = Math.max(parseDateLocal(b.dateAjout).getTime(), b.dateContact ? parseDateLocal(b.dateContact).getTime() : 0);
         return dateB - dateA;
       });
-  }, [leads]);
-
-  const getStatusColor = (status: string) => {
-    const s = status.toLowerCase();
-    if (s.includes('nouveau') || s.includes('new')) return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-    if (s.includes('contact')) return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-    if (s.includes('qualifi')) return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-    if (s.includes('prop')) return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
-    if (s.includes('gagn') || s.includes('won')) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-    if (s.includes('perdu') || s.includes('lost')) return 'bg-red-500/10 text-red-400 border-red-500/20';
-    return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
-  };
-
-  const StatCard = ({ title, current, previous, trend, icon: Icon }: any) => (
-    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg shadow-black/10">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-slate-400 text-sm font-medium">{title}</h3>
-        <div className="w-10 h-10 rounded-xl bg-slate-900/50 flex items-center justify-center text-slate-300">
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
-      <div className="flex items-end gap-3">
-        <p className="text-3xl font-semibold text-slate-50">{current}</p>
-        <div className={`flex items-center text-sm font-medium mb-1 ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-          {trend >= 0 ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
-          {Math.abs(trend)}%
-        </div>
-      </div>
-      <p className="text-xs text-slate-500 mt-2">vs semaine dernière ({previous})</p>
-    </div>
-  );
+  }, [leads, startOfWeek]);
 
   return (
-    <div className="h-full overflow-y-auto w-full">
+    <div className="h-full overflow-y-auto w-full bg-slate-900">
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-8 max-w-7xl mx-auto"
+        className="p-8 max-w-7xl mx-auto space-y-8"
       >
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Rapports & Statistiques</h1>
-          <p className="text-slate-400 mt-1 text-sm">Analysez vos performances hebdomadaires et l'historique des contacts.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard 
-            title="Nouveaux prospects" 
-            current={stats.added.current} 
-            previous={stats.added.previous} 
-            trend={stats.added.trend} 
-            icon={BarChart3} 
-          />
-          <StatCard 
-            title="Prospects contactés" 
-            current={stats.contacted.current} 
-            previous={stats.contacted.previous} 
-            trend={stats.contacted.trend} 
-            icon={Calendar} 
-          />
-          <StatCard 
-            title="Prospects gagnés" 
-            current={stats.won.current} 
-            previous={stats.won.previous} 
-            trend={stats.won.trend} 
-            icon={TrendingUp} 
-          />
-        </div>
-
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg shadow-black/10 flex flex-col min-h-0 overflow-hidden">
-          <div className="p-6 border-b border-slate-700 bg-slate-900/50">
-            <h3 className="font-medium text-slate-50">Historique des contacts</h3>
-            <p className="text-sm text-slate-400 mt-1">Liste chronologique des prospects que vous avez contactés.</p>
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-50 tracking-tight">Activité de la Semaine</h1>
+            <p className="text-slate-400 mt-1">Résumé de vos performances depuis lundi.</p>
           </div>
-          <div className="overflow-auto max-h-[600px] custom-scrollbar">
-            <table className="w-full text-left text-sm relative">
-              <thead className="bg-slate-900/95 backdrop-blur-md border-b border-slate-700 text-slate-400 font-medium sticky top-0 z-10">
-                <tr>
-                  <th className="px-6 py-4">Date de contact</th>
-                  <th className="px-6 py-4">Prospect</th>
-                  <th className="px-6 py-4">Entreprise</th>
-                  <th className="px-6 py-4">Statut actuel</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700/50">
-                {contactedLeads.map((lead) => {
-                  const dateStr = lead.dateContact || lead.dateAjout;
-                  const dateObj = new Date(dateStr);
-                  return (
-                    <tr key={lead.id} className="hover:bg-slate-700/20 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-300">
-                        {dateObj.toLocaleDateString('fr-FR', { 
-                          weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
-                        })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-200">{lead.prenom} {lead.nom}</div>
-                        <div className="text-slate-500 text-xs">{lead.fonction || 'Fonction non renseignée'}</div>
-                      </td>
-                      <td className="px-6 py-4 text-slate-300">
-                        {lead.entreprise || '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(lead.status)}`}>
+          <div className="bg-slate-800/50 border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3 text-sm text-slate-300">
+            <Calendar className="w-4 h-4 text-blue-400" />
+            <span>Semaine du {startOfWeek.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+          </div>
+        </div>
+
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <UserPlus className="w-12 h-12 text-blue-400" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">Nouveaux Prospects</p>
+            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.added}</h2>
+            <div className="mt-4 flex items-center gap-2 text-xs text-blue-400 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>Ajoutés cette semaine</span>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Clock className="w-12 h-12 text-amber-400" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">Prospects Contactés</p>
+            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.contacted}</h2>
+            <div className="mt-4 flex items-center gap-2 text-xs text-amber-400 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>Actions de contact</span>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">Prospects Gagnés</p>
+            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.won}</h2>
+            <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>Succès cette semaine</span>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Daily Chart */}
+          <div className="lg:col-span-1 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-50 mb-6 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-400" />
+              Nouveaux leads par jour
+            </h3>
+            <div className="flex items-end justify-between h-48 gap-2">
+              {dailyActivity.map((day) => (
+                <div key={day.name} className="flex-1 flex flex-col items-center gap-2 group">
+                  <div className="w-full relative flex flex-col justify-end h-full">
+                    <motion.div 
+                      initial={{ height: 0 }}
+                      animate={{ height: `${day.percent}%` }}
+                      className="w-full bg-blue-500/20 border-t-2 border-blue-500 rounded-t-md group-hover:bg-blue-500/30 transition-colors relative"
+                    >
+                      {day.count > 0 && (
+                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-blue-400">
+                          {day.count}
+                        </span>
+                      )}
+                    </motion.div>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium">{day.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity Feed */}
+          <div className="lg:col-span-2 bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col">
+            <h3 className="text-lg font-semibold text-slate-50 mb-6 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-indigo-400" />
+              Journal de la semaine
+            </h3>
+            <div className="space-y-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+              {weeklyLeads.map((lead) => {
+                const isNewThisWeek = parseDateLocal(lead.dateAjout) >= startOfWeek;
+                const isContactedThisWeek = lead.dateContact && parseDateLocal(lead.dateContact) >= startOfWeek;
+                
+                return (
+                  <div key={lead.id} className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/50 border border-slate-700/50 hover:border-slate-600 transition-colors">
+                    <div className={`mt-1 p-2 rounded-lg ${isWon(lead.status) ? 'bg-emerald-500/10 text-emerald-400' : isContactedThisWeek ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                      {isWon(lead.status) ? <CheckCircle2 className="w-4 h-4" /> : isContactedThisWeek ? <Users className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-slate-200 truncate">
+                          {lead.prenom} {lead.nom}
+                        </p>
+                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                          {isContactedThisWeek ? 'Contacté' : 'Ajouté'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Building2 className="w-3 h-3 text-slate-500" />
+                        <span className="text-xs text-slate-400 truncate">{lead.entreprise}</span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                          isWon(lead.status) ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                          isContacted(lead.status) ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                          'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                        }`}>
                           {lead.status}
                         </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {contactedLeads.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                      Aucun prospect contacté pour le moment.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {weeklyLeads.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                  <Calendar className="w-12 h-12 mb-4 opacity-20" />
+                  <p>Aucune activité enregistrée cette semaine.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>

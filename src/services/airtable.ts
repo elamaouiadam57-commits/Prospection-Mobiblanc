@@ -43,10 +43,10 @@ export const fetchLeads = async (): Promise<Lead[]> => {
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
 
   try {
-    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}?_t=${Date.now()}`, {
       headers: {
         Authorization: `Bearer ${pat}`,
-      },
+      }
     });
 
     if (!response.ok) {
@@ -59,7 +59,7 @@ export const fetchLeads = async (): Promise<Lead[]> => {
     return data.records.map((record: any) => ({
       id: record.id,
       airtableId: record.id,
-      dateAjout: record.fields["Date d'ajout"] || new Date().toISOString(),
+      dateAjout: record.fields["Date d'ajout"] || record.createdTime || new Date().toISOString(),
       dateContact: record.fields["Date de contact"] || '',
       prenom: record.fields["Prénom"] || '',
       nom: record.fields["Nom"] || 'Inconnu',
@@ -108,7 +108,8 @@ export const updateLeadStatus = async (leadId: string, newStatus: LeadStatus): P
     });
 
     if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.statusText}`);
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(`Airtable API error: ${errData.error?.message || errData.error?.type || response.statusText}`);
     }
   } catch (error) {
     console.error('Failed to update Airtable:', error);
@@ -170,7 +171,64 @@ export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur ${response.status}: ${errData.error?.message || response.statusText}`);
+      const errorMessage = errData.error?.message || errData.error?.type || response.statusText;
+      
+      // If the error is about the missing "Date de contact" column, retry without it
+      if (errorMessage.includes('Unknown field name: "Date de contact"') || errorMessage.includes('Date de contact')) {
+        console.warn('Column "Date de contact" is missing in Airtable. Retrying without it...');
+        const fallbackBody = {
+          fields: {
+            "Prénom": leadData.prenom,
+            "Nom": leadData.nom,
+            "Fonction": leadData.fonction,
+            "Entreprise": leadData.entreprise,
+            "Mail": leadData.mail,
+            "Numéro": leadData.numero,
+            "Status": leadData.status || 'Nouveau',
+            "Notes": leadData.notes,
+            "Date d'ajout": new Date().toISOString().split('T')[0],
+          }
+        };
+        
+        const retryResponse = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${pat}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ records: [fallbackBody], typecast: true }),
+        });
+        
+        if (!retryResponse.ok) {
+          const retryErrData = await retryResponse.json().catch(() => ({}));
+          throw new Error(`Erreur ${retryResponse.status}: ${retryErrData.error?.message || retryErrData.error?.type || retryResponse.statusText}`);
+        }
+        
+        const data = await retryResponse.json();
+        const record = data.records[0];
+        
+        return {
+          id: record.id,
+          airtableId: record.id,
+          dateAjout: record.fields["Date d'ajout"] || new Date().toISOString(),
+          dateContact: '',
+          prenom: record.fields["Prénom"] || '',
+          nom: record.fields["Nom"] || 'Inconnu',
+          linkedin: record.fields["Linkedin"] || '',
+          fonction: record.fields["Fonction"] || '',
+          category: record.fields["Category"] || '',
+          entreprise: record.fields["Entreprise"] || 'Inconnue',
+          numero: record.fields["Numéro"] || '',
+          mail: record.fields["Mail"] || '',
+          status: parseStatus(record.fields["Status"]),
+          mailEnvoye: record.fields["Mail envoyé"] || false,
+          notes: record.fields["Notes"] || '',
+          scoreLead: record.fields["Score lead"] || 0,
+          tags: parseTags(record.fields["Tags"] || record.fields["Mots-clés"] || record.fields["Labels"]),
+        };
+      }
+      
+      throw new Error(`Erreur ${response.status}: ${errorMessage}`);
     }
 
     const data = await response.json();
@@ -236,7 +294,42 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
     });
 
     if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.statusText}`);
+      const errData = await response.json().catch(() => ({}));
+      const errorMessage = errData.error?.message || errData.error?.type || response.statusText;
+      
+      // If the error is about the missing "Date de contact" column, retry without it
+      if (leadData.dateContact !== undefined && (errorMessage.includes('Unknown field name: "Date de contact"') || errorMessage.includes('Date de contact'))) {
+        console.warn('Column "Date de contact" is missing in Airtable. Retrying without it...');
+        const { dateContact, ...restLeadData } = leadData;
+        
+        const fallbackFields = {
+          ...(restLeadData.prenom !== undefined && { "Prénom": restLeadData.prenom }),
+          ...(restLeadData.nom !== undefined && { "Nom": restLeadData.nom }),
+          ...(restLeadData.fonction !== undefined && { "Fonction": restLeadData.fonction }),
+          ...(restLeadData.entreprise !== undefined && { "Entreprise": restLeadData.entreprise }),
+          ...(restLeadData.mail !== undefined && { "Mail": restLeadData.mail }),
+          ...(restLeadData.numero !== undefined && { "Numéro": restLeadData.numero }),
+          ...(restLeadData.status !== undefined && { "Status": restLeadData.status }),
+          ...(restLeadData.notes !== undefined && { "Notes": restLeadData.notes }),
+        };
+
+        const retryResponse = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${pat}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fields: fallbackFields, typecast: true }),
+        });
+
+        if (!retryResponse.ok) {
+          const retryErrData = await retryResponse.json().catch(() => ({}));
+          throw new Error(`Airtable API error: ${retryErrData.error?.message || retryErrData.error?.type || retryResponse.statusText}`);
+        }
+        return;
+      }
+
+      throw new Error(`Airtable API error: ${errorMessage}`);
     }
   } catch (error) {
     console.error('Failed to update Airtable:', error);
@@ -264,7 +357,8 @@ export const deleteLead = async (leadId: string): Promise<void> => {
     });
 
     if (!response.ok) {
-      throw new Error(`Airtable API error: ${response.statusText}`);
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(`Airtable API error: ${errData.error?.message || errData.error?.type || response.statusText}`);
     }
   } catch (error) {
     console.error('Failed to delete from Airtable:', error);

@@ -51,9 +51,27 @@ export function Dashboard({ leads }: DashboardProps) {
   // Sort companies by number of leads (descending)
   const sortedCompanies = Array.from(companiesMap.entries()).sort((a, b) => b[1].length - a[1].length);
 
+  // Helper to parse date safely in local timezone
+  const parseDateLocal = (dateStr: string) => {
+    if (!dateStr) return new Date(0);
+    try {
+      if (dateStr.includes('T')) {
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? new Date(0) : d;
+      }
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return new Date(0);
+      const [y, m, d] = parts.map(Number);
+      const parsed = new Date(y, m - 1, d);
+      return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+    } catch (e) {
+      return new Date(0);
+    }
+  };
+
   // Recent activity (last 10 added leads)
   const recentActivity = [...leads]
-    .sort((a, b) => new Date(b.dateAjout).getTime() - new Date(a.dateAjout).getTime())
+    .sort((a, b) => parseDateLocal(b.dateAjout).getTime() - parseDateLocal(a.dateAjout).getTime())
     .slice(0, 15);
 
   const toggleCompany = (companyName: string) => {
@@ -186,9 +204,10 @@ export function Dashboard({ leads }: DashboardProps) {
                     <span className="font-medium text-slate-100">{lead.prenom} {lead.nom}</span> a été ajouté(e).
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    {new Date(lead.dateAjout).toLocaleDateString('fr-FR', { 
+                    {parseDateLocal(lead.dateAjout).toLocaleDateString('fr-FR', { 
                       day: 'numeric', month: 'short', year: 'numeric',
-                      hour: '2-digit', minute: '2-digit'
+                      hour: lead.dateAjout.includes('T') ? '2-digit' : undefined, 
+                      minute: lead.dateAjout.includes('T') ? '2-digit' : undefined
                     })}
                   </p>
                   <div className="mt-2 flex items-center gap-2">

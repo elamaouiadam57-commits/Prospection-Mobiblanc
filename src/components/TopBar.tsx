@@ -1,13 +1,15 @@
-import { Search, Bell, ArrowDownUp } from 'lucide-react';
+import { Search, Bell, ArrowDownUp, RefreshCw } from 'lucide-react';
 
 interface TopBarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   sortOrder: 'desc' | 'asc';
   setSortOrder: (order: 'desc' | 'asc') => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export function TopBar({ searchQuery, setSearchQuery, sortOrder, setSortOrder }: TopBarProps) {
+export function TopBar({ searchQuery, setSearchQuery, sortOrder, setSortOrder, onRefresh, isRefreshing }: TopBarProps) {
   return (
     <header className="h-16 border-b border-slate-800/50 bg-slate-900/70 backdrop-blur-xl sticky top-0 z-30 flex items-center justify-between px-8">
       <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -17,6 +19,16 @@ export function TopBar({ searchQuery, setSearchQuery, sortOrder, setSortOrder }:
       </div>
 
       <div className="flex items-center gap-4">
+        {onRefresh && (
+          <button 
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className={`p-2 text-slate-400 hover:text-slate-200 transition-colors rounded-full hover:bg-slate-800 ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+            title="Synchroniser avec Airtable"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        )}
         <button 
           onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
           className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors"

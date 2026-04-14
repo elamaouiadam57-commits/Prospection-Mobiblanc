@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { Lead } from '../types';
@@ -8,9 +8,10 @@ interface LeadFormModalProps {
   onClose: () => void;
   onSubmit: (leadData: Partial<Lead>) => Promise<void>;
   initialData?: Lead | null;
+  statusOptions?: string[];
 }
 
-export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFormModalProps) {
+export function LeadFormModal({ isOpen, onClose, onSubmit, initialData, statusOptions = ['Nouveau', 'Contacté', 'Qualifié', 'Proposition', 'Gagné', 'Perdu'] }: LeadFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     prenom: '',
@@ -55,15 +56,6 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
-      setFormData({
-        prenom: '',
-        nom: '',
-        entreprise: '',
-        mail: '',
-        numero: '',
-        status: 'Nouveau',
-        notes: '',
-      });
       onClose();
     } catch (error) {
       console.error(error);
@@ -101,7 +93,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1">Prénom</label>
@@ -151,15 +143,31 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData }: LeadFo
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={formData.mail}
-                  onChange={e => setFormData({ ...formData, mail: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-slate-50 placeholder-slate-500"
-                  placeholder="jean.dupont@acme.com"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={formData.mail}
+                    onChange={e => setFormData({ ...formData, mail: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-slate-50 placeholder-slate-500"
+                    placeholder="jean.dupont@acme.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Statut</label>
+                  <select
+                    value={formData.status}
+                    onChange={e => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-slate-50"
+                  >
+                    {statusOptions.map(option => (
+                      <option key={option} value={option} className="bg-slate-800 text-slate-50">
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>

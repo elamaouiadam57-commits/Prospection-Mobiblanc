@@ -1,10 +1,10 @@
 import { Lead, LeadStatus } from '../types';
 import { motion } from 'motion/react';
-import { cn, formatDateSafe } from '../lib/utils';
-import { useState } from 'react';
+import { cn, formatDateSafe, getStatusOptions } from '../lib/utils';
+import { useState, useMemo } from 'react';
 import { LeadFormModal } from './LeadFormModal';
 import { ConfirmModal } from './ConfirmModal';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, ChevronDown } from 'lucide-react';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -39,13 +39,15 @@ function ExpandableNote({ note }: { note: string }) {
 
 const getStatusColor = (status: string) => {
   const s = status.toLowerCase();
-  if (s.includes('nouveau') || s.includes('new') || s.includes('interested')) return 'bg-blue-500/10 text-blue-400';
-  if (s.includes('contact')) return 'bg-purple-500/10 text-purple-400';
-  if (s.includes('qualif') || s.includes('reply') || s.includes('attente')) return 'bg-amber-500/10 text-amber-400';
-  if (s.includes('prop')) return 'bg-indigo-500/10 text-indigo-400';
-  if (s.includes('gagn') || s.includes('won') || s.includes('success')) return 'bg-emerald-500/10 text-emerald-400';
-  if (s.includes('perdu') || s.includes('lost') || s.includes('fail')) return 'bg-rose-500/10 text-rose-400';
-  return 'bg-slate-800 text-slate-400';
+  if (s.includes('nouveau') || s.includes('new') || s.includes('interested')) return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+  if (s.includes('contact')) return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+  if (s.includes('qualif') || s.includes('reply') || s.includes('attente')) return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+  if (s.includes('not qualified')) return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+  if (s.includes('not available')) return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+  if (s.includes('prop')) return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+  if (s.includes('gagn') || s.includes('won') || s.includes('success')) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+  if (s.includes('perdu') || s.includes('lost') || s.includes('fail')) return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+  return 'bg-slate-800 text-slate-400 border-slate-700';
 };
 
 export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: LeadsTableProps) {
@@ -53,6 +55,20 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const STATUS_OPTIONS = useMemo(() => getStatusOptions(leads), [leads]);
+
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
+    setUpdatingId(leadId);
+    try {
+      await onUpdateLead(leadId, { status: newStatus as LeadStatus });
+    } catch (error) {
+      console.error('Failed to update status', error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleEdit = (lead: Lead) => {
     setEditingLead(lead);
@@ -116,12 +132,18 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Tags</th>
                 <th className="px-6 py-4">Notes</th>
-                <th className="px-6 py-4">Date d'ajout</th>
+                <th className="px-6 py-4">Dernière activité</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
-              {leads.map((lead) => (
+              {leads
+                .sort((a, b) => {
+                  const dateA = a.dateContact || a.dateAjout;
+                  const dateB = b.dateContact || b.dateAjout;
+                  return new Date(dateB).getTime() - new Date(dateA).getTime();
+                })
+                .map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-700/50 transition-colors group">
                   <td className="px-6 py-4 align-top">
                     <div className="font-medium text-slate-50">{lead.prenom} {lead.nom}</div>
@@ -131,9 +153,25 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                   <td className="px-6 py-4 text-slate-300 align-top">{lead.fonction || '-'}</td>
                   <td className="px-6 py-4 text-slate-300 align-top">{lead.entreprise}</td>
                   <td className="px-6 py-4 align-top">
-                    <span className={cn("px-2.5 py-1 rounded-md text-xs font-medium", getStatusColor(lead.status))}>
-                      {lead.status}
-                    </span>
+                    <div className="relative inline-block">
+                      <select
+                        value={lead.status}
+                        onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                        disabled={updatingId === lead.id}
+                        className={cn(
+                          "appearance-none px-2.5 py-1 pr-7 rounded-md text-xs font-medium border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors",
+                          getStatusColor(lead.status),
+                          updatingId === lead.id ? 'opacity-50 cursor-not-allowed' : ''
+                        )}
+                      >
+                        {STATUS_OPTIONS.map(status => (
+                          <option key={status} value={status} className="bg-slate-800 text-slate-200">
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
+                    </div>
                   </td>
                   <td className="px-6 py-4 align-top">
                     <div className="flex flex-wrap gap-1">
@@ -148,7 +186,7 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                     <ExpandableNote note={lead.notes} />
                   </td>
                   <td className="px-6 py-4 text-slate-400 align-top">
-                    {formatDateSafe(lead.dateAjout, 'MMM d, yyyy')}
+                    {formatDateSafe(lead.dateContact || lead.dateAjout, 'MMM d, yyyy')}
                   </td>
                   <td className="px-6 py-4 align-top text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -187,6 +225,7 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
         onClose={handleModalClose}
         onSubmit={handleModalSubmit}
         initialData={editingLead}
+        statusOptions={STATUS_OPTIONS}
       />
 
       <ConfirmModal

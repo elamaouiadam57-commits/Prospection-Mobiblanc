@@ -19,48 +19,58 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadData = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
+    else setIsRefreshing(true);
+    
+    try {
+      const data = await fetchLeads();
+      setLeads(data);
+      setError(null);
+    } catch (err: any) {
+      console.error("Failed to load leads", err);
+      setError(err.message || "Une erreur est survenue lors de la connexion à Airtable.");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchLeads();
-        setLeads(data);
-        setError(null);
-      } catch (err: any) {
-        console.error("Failed to load leads", err);
-        setError(err.message || "Une erreur est survenue lors de la connexion à Airtable.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
     loadData();
+    
+    // Poll for changes every 30 seconds
+    const interval = setInterval(() => {
+      loadData(false);
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleLeadMove = async (leadId: string, newStatus: LeadStatus) => {
     const lead = leads.find(l => l.id === leadId);
-    const isContacted = !newStatus.toLowerCase().includes('nouveau') && !newStatus.toLowerCase().includes('new');
-    const needsDateContact = isContacted && lead && !lead.dateContact;
-    const newDateContact = needsDateContact ? new Date().toISOString() : lead?.dateContact;
+    const isContactedStatus = !newStatus.toLowerCase().includes('nouveau') && !newStatus.toLowerCase().includes('new');
+    
+    // Update dateContact: set to current time if active status, clear if Nouveau
+    const newDateContact = isContactedStatus ? new Date().toISOString() : '';
 
     // Optimistic UI update
     setLeads(prev => prev.map(lead => 
       lead.id === leadId ? { 
         ...lead, 
         status: newStatus,
-        ...(needsDateContact && { dateContact: newDateContact })
+        dateContact: newDateContact
       } : lead
     ));
 
     try {
-      if (needsDateContact) {
-        await updateLead(leadId, { status: newStatus, dateContact: newDateContact });
-      } else {
-        await updateLeadStatus(leadId, newStatus);
-      }
+      await updateLead(leadId, { status: newStatus, dateContact: newDateContact });
     } catch (error) {
       console.error("Failed to update lead status in Airtable", error);
       // Revert on failure by re-fetching
-      const data = await fetchLeads();
-      setLeads(data);
+      loadData(false);
     }
   };
 
@@ -75,21 +85,23 @@ export default function App() {
   };
 
   const handleUpdateLead = async (leadId: string, leadData: Partial<Lead>) => {
-    try {
-      const lead = leads.find(l => l.id === leadId);
-      let updatedData = { ...leadData };
-      
-      if (leadData.status) {
-        const isContacted = !leadData.status.toLowerCase().includes('nouveau') && !leadData.status.toLowerCase().includes('new');
-        if (isContacted && lead && !lead.dateContact && !leadData.dateContact) {
-          updatedData.dateContact = new Date().toISOString();
-        }
-      }
+    const lead = leads.find(l => l.id === leadId);
+    let updatedData = { ...leadData };
+    
+    if (leadData.status) {
+      const isContactedStatus = !leadData.status.toLowerCase().includes('nouveau') && !leadData.status.toLowerCase().includes('new');
+      updatedData.dateContact = isContactedStatus ? new Date().toISOString() : '';
+    }
 
+    // Optimistic update
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, ...updatedData } : l));
+
+    try {
       await updateLead(leadId, updatedData);
-      setLeads(prev => prev.map(lead => lead.id === leadId ? { ...lead, ...updatedData } : lead));
     } catch (error) {
       console.error("Failed to update lead", error);
+      // Revert on failure
+      loadData(false);
       throw error;
     }
   };
@@ -135,9 +147,17 @@ export default function App() {
           setSearchQuery={setSearchQuery} 
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
+          onRefresh={() => loadData(false)}
+          isRefreshing={isRefreshing}
         />
         
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col relative">
+          {isRefreshing && (
+            <div className="absolute top-4 right-4 z-50 bg-slate-800 text-blue-400 text-xs px-3 py-1.5 rounded-full shadow-lg border border-slate-700 flex items-center gap-2">
+              <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              Synchronisation...
+            </div>
+          )}
           {error && (
             <div className="m-8 p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400">
               <h3 className="text-lg font-semibold flex items-center gap-2">

@@ -16,7 +16,7 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable } 
 import { CSS } from '@dnd-kit/utilities';
 import { useState, useMemo } from 'react';
 import type { Key } from 'react';
-import { cn, formatDateSafe } from '../lib/utils';
+import { cn, formatDateSafe, getStatusOptions } from '../lib/utils';
 import { Edit2, Trash2 } from 'lucide-react';
 
 const DEFAULT_COLUMNS: string[] = ['Nouveau', 'Contacté', 'Qualifié', 'Proposition', 'Gagné', 'Perdu'];
@@ -101,7 +101,7 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lea
       )}
 
       <div className="flex justify-between items-center text-[10px] text-slate-500">
-        <span>{formatDateSafe(lead.dateAjout, 'MMM d')}</span>
+        <span>{formatDateSafe(lead.dateContact || lead.dateAjout, 'MMM d')}</span>
       </div>
     </div>
   );
@@ -158,30 +158,20 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
   );
 
   const { activeColumns, cols } = useMemo(() => {
-    const uniqueStatuses = Array.from(new Set(leads.map(l => l.status).filter(Boolean)));
-    
-    let activeCols: string[] = [];
-    const usesDefault = uniqueStatuses.some(s => DEFAULT_COLUMNS.includes(s));
-    
-    if (usesDefault || uniqueStatuses.length === 0) {
-      activeCols = [...DEFAULT_COLUMNS];
-      uniqueStatuses.forEach(s => {
-        if (!activeCols.includes(s)) activeCols.push(s);
-      });
-    } else {
-      activeCols = uniqueStatuses;
-    }
+    const activeCols = getStatusOptions(leads);
 
     const columnsMap: Record<string, Lead[]> = {};
     activeCols.forEach(c => columnsMap[c] = []);
     
     leads.forEach(lead => {
       const status = lead.status || 'Nouveau';
-      if (!columnsMap[status]) {
-        columnsMap[status] = [];
+      if (columnsMap[status]) {
+        columnsMap[status].push(lead);
+      } else {
+        // Fallback if status is somehow not in activeCols
+        columnsMap[status] = [lead];
         if (!activeCols.includes(status)) activeCols.push(status);
       }
-      columnsMap[status].push(lead);
     });
     
     return { activeColumns: activeCols, cols: columnsMap };
