@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Lead } from '../types';
+import { Lead, Consultant, ConsultantInterview } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Target, Building2, UserCheck, ChevronDown, Clock } from 'lucide-react';
+import { Users, Target, Building2, UserCheck, ChevronDown, Clock, Video } from 'lucide-react';
 
 interface DashboardProps {
   leads: Lead[];
+  consultants?: Consultant[];
+  interviews?: ConsultantInterview[];
 }
 
-export function Dashboard({ leads }: DashboardProps) {
+export function Dashboard({ leads, consultants = [], interviews = [] }: DashboardProps) {
   const [expandedCompany, setExpandedCompany] = useState<string | null>(null);
 
   const isWon = (s: string) => {
@@ -91,9 +93,9 @@ export function Dashboard({ leads }: DashboardProps) {
 
   const stats = [
     { label: 'Total Prospects', value: totalLeads.toString(), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { label: 'Personnes contactées', value: contactedLeads.length.toString(), icon: UserCheck, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-    { label: 'Entreprises contactées', value: uniqueCompanies.size.toString(), icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Taux de conversion', value: `${winRate}%`, icon: Target, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'Entreprises', value: uniqueCompanies.size.toString(), icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: 'Consultants', value: consultants.length.toString(), icon: UserCheck, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+    { label: 'Entretiens', value: interviews.length.toString(), icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10' },
   ];
 
   return (

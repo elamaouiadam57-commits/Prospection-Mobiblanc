@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
-import { Lead, LeadStatus } from '../types';
-import { MOCK_LEADS } from '../data/mock';
+import { Lead, LeadStatus, Consultant, ConsultantInterview } from '../types';
+import { MOCK_LEADS, MOCK_CONSULTANTS, MOCK_INTERVIEWS } from '../data/mock';
 
 // Helper to check if Airtable is configured
 export const isAirtableConfigured = () => {
@@ -364,4 +364,99 @@ export const deleteLead = async (leadId: string): Promise<void> => {
     console.error('Failed to delete from Airtable:', error);
     throw error;
   }
+};
+
+// --- CONSULTANTS METHODS (LocalStorage) ---
+
+const CONSULTANTS_STORAGE_KEY = 'crm_consultants_data';
+const INTERVIEWS_STORAGE_KEY = 'crm_interviews_data';
+
+export const fetchConsultants = async (): Promise<Consultant[]> => {
+  const stored = localStorage.getItem(CONSULTANTS_STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Failed to parse stored consultants', e);
+    }
+  }
+  // Initial seeding with mock data if empty
+  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(MOCK_CONSULTANTS));
+  return [...MOCK_CONSULTANTS];
+};
+
+export const createConsultant = async (data: Partial<Consultant>): Promise<Consultant> => {
+  const consultants = await fetchConsultants();
+  const newConsultant = {
+    ...data,
+    id: `c-${Date.now()}`,
+    dateAjout: new Date().toISOString(),
+  } as Consultant;
+  
+  const updated = [newConsultant, ...consultants];
+  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(updated));
+  return newConsultant;
+};
+
+// --- INTERVIEWS METHODS (LocalStorage) ---
+
+export const fetchInterviews = async (): Promise<ConsultantInterview[]> => {
+  const stored = localStorage.getItem(INTERVIEWS_STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Failed to parse stored interviews', e);
+    }
+  }
+  // Initial seeding with mock data if empty
+  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(MOCK_INTERVIEWS));
+  return [...MOCK_INTERVIEWS];
+};
+
+export const createInterview = async (data: Partial<ConsultantInterview>): Promise<ConsultantInterview> => {
+  const interviews = await fetchInterviews();
+  const newInterview = {
+    ...data,
+    id: `i-${Date.now()}`,
+  } as ConsultantInterview;
+  
+  const updated = [newInterview, ...interviews];
+  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
+  return newInterview;
+};
+
+export const updateConsultant = async (id: string, data: Partial<Consultant>): Promise<Consultant> => {
+  const consultants = await fetchConsultants();
+  const updated = consultants.map(c => c.id === id ? { ...c, ...data } : c);
+  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(updated));
+  const result = updated.find(c => c.id === id);
+  if (!result) throw new Error('Consultant not found');
+  return result;
+};
+
+export const deleteConsultant = async (id: string): Promise<void> => {
+  const consultants = await fetchConsultants();
+  const updated = consultants.filter(c => c.id !== id);
+  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(updated));
+  
+  // Also delete associated interviews
+  const interviews = await fetchInterviews();
+  const updatedInterviews = interviews.filter(i => i.consultantId !== id);
+  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updatedInterviews));
+};
+
+export const updateInterview = async (id: string, data: Partial<ConsultantInterview>): Promise<ConsultantInterview> => {
+  const interviews = await fetchInterviews();
+  const updated = interviews.map(i => i.id === id ? { ...i, ...data } : i);
+  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
+  const result = updated.find(i => i.id === id);
+  if (!result) throw new Error('Interview not found');
+  return result;
+};
+
+export const deleteInterview = async (id: string): Promise<void> => {
+  const interviews = await fetchInterviews();
+  const updated = interviews.filter(i => i.id !== id);
+  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
 };

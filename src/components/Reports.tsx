@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Lead } from '../types';
+import { Lead, ConsultantInterview } from '../types';
 import { motion } from 'motion/react';
 import { 
   Users, 
@@ -8,14 +8,16 @@ import {
   Calendar, 
   TrendingUp,
   Clock,
-  Building2
+  Building2,
+  Video
 } from 'lucide-react';
 
 interface ReportsProps {
   leads: Lead[];
+  interviews?: ConsultantInterview[];
 }
 
-export function Reports({ leads }: ReportsProps) {
+export function Reports({ leads, interviews = [] }: ReportsProps) {
   // Helpers for status checks
   const isWon = (s: string) => {
     const lower = s.toLowerCase();
@@ -36,10 +38,12 @@ export function Reports({ leads }: ReportsProps) {
         return isNaN(d.getTime()) ? new Date(0) : d;
       }
       const parts = dateStr.split('-');
-      if (parts.length !== 3) return new Date(0);
-      const [y, m, d] = parts.map(Number);
-      const parsed = new Date(y, m - 1, d);
-      return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+      if (parts.length === 3) {
+        const [y, m, d] = parts.map(Number);
+        const parsed = new Date(y, m - 1, d);
+        return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+      }
+      return new Date(dateStr);
     } catch (e) {
       return new Date(0);
     }
@@ -69,14 +73,16 @@ export function Reports({ leads }: ReportsProps) {
       const d = l.dateContact ? parseDateLocal(l.dateContact) : parseDateLocal(l.dateAjout);
       return d >= startOfWeek && isWon(l.status);
     });
+    const interviewsThisWeek = interviews.filter(i => parseDateLocal(i.date) >= startOfWeek);
 
     return {
       added: added.length,
       contacted: contacted.length,
       won: won.length,
+      interviews: interviewsThisWeek.length,
       total: leads.length
     };
-  }, [leads, startOfWeek]);
+  }, [leads, interviews, startOfWeek]);
 
   // Group activity by day for this week (Added OR Contacted)
   const dailyActivity = useMemo(() => {
@@ -139,7 +145,7 @@ export function Reports({ leads }: ReportsProps) {
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <motion.div 
             whileHover={{ y: -4 }}
             className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
@@ -182,6 +188,22 @@ export function Reports({ leads }: ReportsProps) {
             <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400 font-medium">
               <TrendingUp className="w-3 h-3" />
               <span>Succès cette semaine</span>
+            </div>
+          </motion.div>
+
+          {/* New Consultant KPI */}
+          <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Video className="w-12 h-12 text-purple-400" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">Entretiens Consultants</p>
+            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.interviews}</h2>
+            <div className="mt-4 flex items-center gap-2 text-xs text-purple-400 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>Entretiens réalisés</span>
             </div>
           </motion.div>
         </div>

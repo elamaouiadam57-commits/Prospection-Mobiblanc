@@ -1,10 +1,10 @@
-import { LayoutDashboard, Users, Trello, Settings, LogOut, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, Trello, Settings, LogOut, BarChart3, UserCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'motion/react';
 
 interface SidebarProps {
-  currentView: 'dashboard' | 'table' | 'kanban' | 'reports';
-  setCurrentView: (view: 'dashboard' | 'table' | 'kanban' | 'reports') => void;
+  currentView: 'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants';
+  setCurrentView: (view: 'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants') => void;
   onLogout: () => void;
 }
 
@@ -13,6 +13,7 @@ export function Sidebar({ currentView, setCurrentView, onLogout }: SidebarProps)
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'table', label: 'Leads Table', icon: Users },
     { id: 'kanban', label: 'Pipeline', icon: Trello },
+    { id: 'consultants', label: 'Consultants', icon: UserCheck },
     { id: 'reports', label: 'Rapports', icon: BarChart3 },
   ] as const;
 

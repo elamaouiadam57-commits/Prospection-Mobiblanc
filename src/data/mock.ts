@@ -1,4 +1,4 @@
-import { Lead } from '../types';
+import { Lead, Consultant, ConsultantInterview } from '../types';
 
 export const MOCK_LEADS: Lead[] = [
   {
@@ -51,5 +51,56 @@ export const MOCK_LEADS: Lead[] = [
     mailEnvoye: true,
     notes: 'Budget validé pour Q3.',
     scoreLead: 95,
+  }
+];
+
+export const MOCK_CONSULTANTS: Consultant[] = [
+  {
+    id: 'c1',
+    prenom: 'Jean',
+    nom: 'Dupont',
+    email: 'j.dupont@consult.com',
+    specialite: 'Cloud Architecture',
+    experience: 12,
+    dateAjout: '2026-04-01T10:00:00Z'
+  },
+  {
+    id: 'c2',
+    prenom: 'Alice',
+    nom: 'Vasseur',
+    email: 'a.vasseur@consult.com',
+    specialite: 'Data Science',
+    experience: 8,
+    dateAjout: '2026-04-05T09:00:00Z'
+  }
+];
+
+export const MOCK_INTERVIEWS: ConsultantInterview[] = [
+  {
+    id: 'i1',
+    consultantId: 'c1',
+    consultantName: 'Jean Dupont',
+    date: '2026-04-10T14:00:00Z',
+    notes: 'Très bon profil technique, maîtrise AWS et GCP.',
+    rating: 5,
+    status: 'Réalisé'
+  },
+  {
+    id: 'i2',
+    consultantId: 'c2',
+    consultantName: 'Alice Vasseur',
+    date: '2026-04-12T11:00:00Z',
+    notes: 'Niveau d\'expertise correct, mais manque d\'expérience sur Spark.',
+    rating: 3,
+    status: 'Réalisé'
+  },
+  {
+    id: 'i3',
+    consultantId: 'c1',
+    consultantName: 'Jean Dupont',
+    date: '2026-04-22T10:00:00Z',
+    notes: 'Entretien final avec le client.',
+    rating: 0,
+    status: 'Programmé'
   }
 ];
