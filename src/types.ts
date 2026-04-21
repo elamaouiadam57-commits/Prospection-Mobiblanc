@@ -40,6 +40,16 @@ export interface ConsultantInterview {
   status: 'Programmé' | 'Réalisé' | 'Annulé';
 }
 
+export interface ProspectionMeeting {
+  id: string;
+  leadId: string;
+  leadName: string;
+  date: string;
+  location: string;
+  notes: string;
+  status: 'Prévu' | 'Terminé' | 'Annulé';
+}
+
 export interface AirtableConfig {
   pat: string;
   baseId: string;

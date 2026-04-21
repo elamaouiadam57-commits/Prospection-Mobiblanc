@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Lead, Consultant, ConsultantInterview } from '../types';
+import { Lead, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Target, Building2, UserCheck, ChevronDown, Clock, Video } from 'lucide-react';
+import { Users, Target, Building2, UserCheck, ChevronDown, Clock, Video, Calendar } from 'lucide-react';
 
 interface DashboardProps {
   leads: Lead[];
   consultants?: Consultant[];
   interviews?: ConsultantInterview[];
+  pms?: ProspectionMeeting[];
 }
 
-export function Dashboard({ leads, consultants = [], interviews = [] }: DashboardProps) {
+export function Dashboard({ leads, consultants = [], interviews = [], pms = [] }: DashboardProps) {
   const [expandedCompany, setExpandedCompany] = useState<string | null>(null);
 
   const isWon = (s: string) => {
@@ -91,11 +92,24 @@ export function Dashboard({ leads, consultants = [], interviews = [] }: Dashboar
     return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
   };
 
+  const getStartOfWeek = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const startOfWeek = getStartOfWeek(new Date());
+  const pmsThisWeek = pms.filter(p => parseDateLocal(p.date) >= startOfWeek).length;
+
   const stats = [
     { label: 'Total Prospects', value: totalLeads.toString(), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
     { label: 'Entreprises', value: uniqueCompanies.size.toString(), icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
     { label: 'Consultants', value: consultants.length.toString(), icon: UserCheck, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
     { label: 'Entretiens', value: interviews.length.toString(), icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { label: 'RDV de la semaine', value: pmsThisWeek.toString(), icon: Calendar, color: 'text-amber-400', bg: 'bg-amber-500/10' },
   ];
 
   return (
@@ -110,7 +124,7 @@ export function Dashboard({ leads, consultants = [], interviews = [] }: Dashboar
           <p className="text-slate-400 mt-1 text-sm">Here's what's happening in your pipeline today.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {stats.map((stat, i) => {
             const Icon = stat.icon;
             return (

@@ -1,4 +1,4 @@
-import { Lead, Consultant, ConsultantInterview } from '../types';
+import { Lead, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
 
 export const MOCK_LEADS: Lead[] = [
   {
@@ -102,5 +102,26 @@ export const MOCK_INTERVIEWS: ConsultantInterview[] = [
     notes: 'Entretien final avec le client.',
     rating: 0,
     status: 'Programmé'
+  }
+];
+
+export const MOCK_PMS: ProspectionMeeting[] = [
+  {
+    id: 'pm1',
+    leadId: '1',
+    leadName: 'Sarah Jenkins',
+    date: '2026-04-25T14:30:00Z',
+    location: 'Visio',
+    notes: 'Présentation de la roadmap produit.',
+    status: 'Prévu'
+  },
+  {
+    id: 'pm2',
+    leadId: '3',
+    leadName: 'Elena Rodriguez',
+    date: '2026-04-20T10:00:00Z',
+    location: 'Physique',
+    notes: 'Discussion sur le budget Q3.',
+    status: 'Terminé'
   }
 ];

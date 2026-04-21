@@ -7,7 +7,7 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { Reports } from './components/Reports';
 import { AirtableBanner } from './components/AirtableBanner';
 import { Login } from './components/Login';
-import { Lead, LeadStatus, Consultant, ConsultantInterview } from './types';
+import { Lead, LeadStatus, Consultant, ConsultantInterview, ProspectionMeeting } from './types';
 import { 
   fetchLeads, 
   updateLeadStatus, 
@@ -21,16 +21,22 @@ import {
   deleteConsultant,
   createInterview,
   updateInterview,
-  deleteInterview
+  deleteInterview,
+  fetchPMs,
+  createPM,
+  updatePM,
+  deletePM
 } from './services/airtable';
 import { Consultants } from './components/Consultants';
+import { ProspectionMeetings } from './components/ProspectionMeetings';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants' | 'prospection-meetings'>('dashboard');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [consultants, setConsultants] = useState<Consultant[]>([]);
   const [interviews, setInterviews] = useState<ConsultantInterview[]>([]);
+  const [pms, setPMs] = useState<ProspectionMeeting[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [isLoading, setIsLoading] = useState(true);
@@ -43,14 +49,16 @@ export default function App() {
     else setIsRefreshing(true);
     
     try {
-      const [leadsData, consultantsData, interviewsData] = await Promise.all([
+      const [leadsData, consultantsData, interviewsData, pmsData] = await Promise.all([
         fetchLeads(),
         fetchConsultants(),
-        fetchInterviews()
+        fetchInterviews(),
+        fetchPMs()
       ]);
       setLeads(leadsData);
       setConsultants(consultantsData);
       setInterviews(interviewsData);
+      setPMs(pmsData);
       setError(null);
     } catch (err: any) {
       console.error("Failed to load data", err);
@@ -136,6 +144,11 @@ export default function App() {
     try {
       await deleteLead(leadId);
       setLeads(prev => prev.filter(lead => lead.id !== leadId));
+      // Also cleanup PMs associated with this lead
+      setPMs(prev => prev.filter(pm => pm.leadId !== leadId));
+      // Usually, we'd have a service method to cleanup, but it's okay for now
+      const currentPMs = await fetchPMs();
+      localStorage.setItem('crm_pm_data', JSON.stringify(currentPMs.filter(p => p.leadId !== leadId)));
     } catch (error) {
       console.error("Failed to delete lead", error);
       throw error;
@@ -199,6 +212,36 @@ export default function App() {
       setInterviews(prev => prev.filter(i => i.id !== id));
     } catch (error) {
       console.error("Failed to delete interview", error);
+      throw error;
+    }
+  };
+
+  const handleAddPM = async (data: Partial<ProspectionMeeting>) => {
+    try {
+      const newPM = await createPM(data);
+      setPMs(prev => [newPM, ...prev]);
+    } catch (error) {
+      console.error("Failed to add PM", error);
+      throw error;
+    }
+  };
+
+  const handleUpdatePM = async (id: string, data: Partial<ProspectionMeeting>) => {
+    try {
+      const updated = await updatePM(id, data);
+      setPMs(prev => prev.map(pm => pm.id === id ? updated : pm));
+    } catch (error) {
+      console.error("Failed to update PM", error);
+      throw error;
+    }
+  };
+
+  const handleDeletePM = async (id: string) => {
+    try {
+      await deletePM(id);
+      setPMs(prev => prev.filter(pm => pm.id !== id));
+    } catch (error) {
+      console.error("Failed to delete PM", error);
       throw error;
     }
   };
@@ -284,6 +327,7 @@ export default function App() {
                   leads={filteredLeads} 
                   consultants={consultants} 
                   interviews={interviews} 
+                  pms={pms}
                 />
               )}
               {currentView === 'table' && (
@@ -302,7 +346,7 @@ export default function App() {
                   onDeleteLead={handleDeleteLead}
                 />
               )}
-              {currentView === 'reports' && <Reports leads={filteredLeads} interviews={interviews} />}
+              {currentView === 'reports' && <Reports leads={filteredLeads} interviews={interviews} pms={pms} />}
               {currentView === 'consultants' && (
                 <Consultants 
                   consultants={filteredConsultants} 
@@ -313,6 +357,15 @@ export default function App() {
                   onAddInterview={handleAddInterview}
                   onUpdateInterview={handleUpdateInterview}
                   onDeleteInterview={handleDeleteInterview}
+                />
+              )}
+              {currentView === 'prospection-meetings' && (
+                <ProspectionMeetings 
+                  pms={pms} 
+                  leads={leads}
+                  onAddPM={handleAddPM}
+                  onUpdatePM={handleUpdatePM}
+                  onDeletePM={handleDeletePM}
                 />
               )}
             </>

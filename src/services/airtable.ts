@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
-import { Lead, LeadStatus, Consultant, ConsultantInterview } from '../types';
-import { MOCK_LEADS, MOCK_CONSULTANTS, MOCK_INTERVIEWS } from '../data/mock';
+import { Lead, LeadStatus, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
+import { MOCK_LEADS, MOCK_CONSULTANTS, MOCK_INTERVIEWS, MOCK_PMS } from '../data/mock';
 
 // Helper to check if Airtable is configured
 export const isAirtableConfigured = () => {
@@ -459,4 +459,53 @@ export const deleteInterview = async (id: string): Promise<void> => {
   const interviews = await fetchInterviews();
   const updated = interviews.filter(i => i.id !== id);
   localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
+};
+
+// --- PROSPECTION MEETINGS METHODS (LocalStorage) ---
+
+const PM_STORAGE_KEY = 'crm_pm_data';
+
+export const fetchPMs = async (): Promise<ProspectionMeeting[]> => {
+  const stored = localStorage.getItem(PM_STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error('Failed to parse stored PMs', e);
+    }
+  }
+  // Initialize with mocks if empty
+  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(MOCK_PMS));
+  return [...MOCK_PMS];
+};
+
+export const createPM = async (data: Partial<ProspectionMeeting>): Promise<ProspectionMeeting> => {
+  const pms = await fetchPMs();
+  const newPM: ProspectionMeeting = {
+    id: Math.random().toString(36).substr(2, 9),
+    leadId: data.leadId || '',
+    leadName: data.leadName || '',
+    date: data.date || new Date().toISOString(),
+    location: data.location || 'Visio',
+    notes: data.notes || '',
+    status: data.status || 'Prévu',
+  };
+  const updated = [newPM, ...pms];
+  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(updated));
+  return newPM;
+};
+
+export const updatePM = async (id: string, data: Partial<ProspectionMeeting>): Promise<ProspectionMeeting> => {
+  const pms = await fetchPMs();
+  const updated = pms.map(pm => pm.id === id ? { ...pm, ...data } : pm);
+  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(updated));
+  const result = updated.find(pm => pm.id === id);
+  if (!result) throw new Error('PM not found');
+  return result;
+};
+
+export const deletePM = async (id: string): Promise<void> => {
+  const pms = await fetchPMs();
+  const updated = pms.filter(pm => pm.id !== id);
+  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(updated));
 };

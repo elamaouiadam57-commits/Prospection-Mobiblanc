@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Lead, ConsultantInterview } from '../types';
+import { Lead, ConsultantInterview, ProspectionMeeting } from '../types';
 import { motion } from 'motion/react';
 import { 
   Users, 
@@ -15,9 +15,10 @@ import {
 interface ReportsProps {
   leads: Lead[];
   interviews?: ConsultantInterview[];
+  pms?: ProspectionMeeting[];
 }
 
-export function Reports({ leads, interviews = [] }: ReportsProps) {
+export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
   // Helpers for status checks
   const isWon = (s: string) => {
     const lower = s.toLowerCase();
@@ -74,15 +75,17 @@ export function Reports({ leads, interviews = [] }: ReportsProps) {
       return d >= startOfWeek && isWon(l.status);
     });
     const interviewsThisWeek = interviews.filter(i => parseDateLocal(i.date) >= startOfWeek);
+    const pmsThisWeek = pms.filter(p => parseDateLocal(p.date) >= startOfWeek);
 
     return {
       added: added.length,
       contacted: contacted.length,
       won: won.length,
       interviews: interviewsThisWeek.length,
+      pms: pmsThisWeek.length,
       total: leads.length
     };
-  }, [leads, interviews, startOfWeek]);
+  }, [leads, interviews, pms, startOfWeek]);
 
   // Group activity by day for this week (Added OR Contacted)
   const dailyActivity = useMemo(() => {
@@ -145,7 +148,7 @@ export function Reports({ leads, interviews = [] }: ReportsProps) {
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           <motion.div 
             whileHover={{ y: -4 }}
             className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
@@ -191,7 +194,6 @@ export function Reports({ leads, interviews = [] }: ReportsProps) {
             </div>
           </motion.div>
 
-          {/* New Consultant KPI */}
           <motion.div 
             whileHover={{ y: -4 }}
             className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
@@ -204,6 +206,21 @@ export function Reports({ leads, interviews = [] }: ReportsProps) {
             <div className="mt-4 flex items-center gap-2 text-xs text-purple-400 font-medium">
               <TrendingUp className="w-3 h-3" />
               <span>Entretiens réalisés</span>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Calendar className="w-12 h-12 text-pink-400" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">RDV de la semaine</p>
+            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.pms}</h2>
+            <div className="mt-4 flex items-center gap-2 text-xs text-pink-400 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>RDV programmés</span>
             </div>
           </motion.div>
         </div>
