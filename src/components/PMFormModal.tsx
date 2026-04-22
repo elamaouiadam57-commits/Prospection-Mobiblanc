@@ -25,26 +25,37 @@ export function PMFormModal({ isOpen, onClose, onSubmit, leads, initialData }: P
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const lastInitialDataId = useRef<string | undefined>(undefined);
+
   useEffect(() => {
-    if (initialData) {
-      const lead = leads.find(l => l.id === initialData.leadId);
-      setFormData({
-        leadId: initialData.leadId,
-        date: initialData.date.slice(0, 16),
-        location: initialData.location,
-        notes: initialData.notes,
-        status: initialData.status,
-      });
-      setSearchQuery(lead ? `${lead.prenom} ${lead.nom}` : '');
-    } else {
-      setFormData({
-        leadId: '',
-        date: new Date().toISOString().slice(0, 16),
-        location: 'Visio',
-        notes: '',
-        status: 'Prévu',
-      });
-      setSearchQuery('');
+    if (!isOpen) {
+      lastInitialDataId.current = undefined;
+      return;
+    }
+
+    // Only initialize if we haven't for this specific PM (or for a new PM)
+    if (lastInitialDataId.current !== (initialData?.id || 'new')) {
+      if (initialData) {
+        const lead = leads.find(l => l.id === initialData.leadId);
+        setFormData({
+          leadId: initialData.leadId,
+          date: initialData.date.slice(0, 16),
+          location: initialData.location,
+          notes: initialData.notes,
+          status: initialData.status,
+        });
+        setSearchQuery(lead ? `${lead.prenom} ${lead.nom}` : '');
+      } else {
+        setFormData({
+          leadId: '',
+          date: new Date().toISOString().slice(0, 16),
+          location: 'Visio',
+          notes: '',
+          status: 'Prévu',
+        });
+        setSearchQuery('');
+      }
+      lastInitialDataId.current = initialData?.id || 'new';
     }
   }, [initialData, isOpen, leads]);
 
