@@ -4,7 +4,8 @@ import { cn, formatDateSafe, getStatusOptions } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import { LeadFormModal } from './LeadFormModal';
 import { ConfirmModal } from './ConfirmModal';
-import { Edit2, Trash2, ChevronDown } from 'lucide-react';
+import { Edit2, Trash2, ChevronDown, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -58,6 +59,29 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const STATUS_OPTIONS = useMemo(() => getStatusOptions(leads), [leads]);
+
+  const handleExportExcel = () => {
+    const dataToExport = leads.map(lead => ({
+      'Prénom': lead.prenom,
+      'Nom': lead.nom,
+      'Email': lead.mail,
+      'Téléphone': lead.numero || '',
+      'Fonction': lead.fonction || '',
+      'Entreprise': lead.entreprise || '',
+      'Statut': lead.status,
+      'Tags': (lead.tags || []).join(', '),
+      'Notes': lead.notes || '',
+      'Date Ajout': lead.dateAjout,
+      'Date Contact': lead.dateContact || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+    
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `CRM_Leads_Export_${date}.xlsx`);
+  };
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     setUpdatingId(leadId);
@@ -113,12 +137,21 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
           <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Leads</h1>
           <p className="text-slate-400 mt-1 text-sm">Manage and track your active leads.</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
-        >
-          Add Lead
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleExportExcel}
+            className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-slate-600"
+          >
+            <Download className="w-4 h-4" />
+            Export Excel
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-sm"
+          >
+            Add Lead
+          </button>
+        </div>
       </div>
 
       <div className="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg shadow-black/10 flex flex-col min-h-0 flex-1 overflow-hidden">
