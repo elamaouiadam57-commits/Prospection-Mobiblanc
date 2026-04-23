@@ -366,6 +366,7 @@ export default function App() {
                   onAddPM={handleAddPM}
                   onUpdatePM={handleUpdatePM}
                   onDeletePM={handleDeletePM}
+                  onUpdateLead={handleUpdateLead}
                 />
               )}
             </>

@@ -23,9 +23,10 @@ interface ProspectionMeetingsProps {
   onAddPM: (data: Partial<ProspectionMeeting>) => Promise<void>;
   onUpdatePM: (id: string, data: Partial<ProspectionMeeting>) => Promise<void>;
   onDeletePM: (id: string) => Promise<void>;
+  onUpdateLead: (id: string, data: Partial<Lead>) => Promise<void>;
 }
 
-export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeletePM }: ProspectionMeetingsProps) {
+export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeletePM, onUpdateLead }: ProspectionMeetingsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPM, setEditingPM] = useState<ProspectionMeeting | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,8 +113,9 @@ export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeleteP
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 key={pm.id}
+                onDoubleClick={() => lead && onUpdateLead(lead.id, { isPriority: !lead.isPriority })}
                 className={cn(
-                  "bg-slate-800/40 border rounded-3xl p-6 hover:border-slate-600 transition-all group h-full flex flex-col",
+                  "bg-slate-800/40 border rounded-3xl p-6 hover:border-slate-600 transition-all group h-full flex flex-col cursor-default",
                   isPriority ? "border-amber-500/40 bg-amber-500/[0.12] shadow-lg shadow-amber-500/5" : "border-slate-700/50"
                 )}
               >

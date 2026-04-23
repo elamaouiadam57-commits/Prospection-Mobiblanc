@@ -29,7 +29,7 @@ interface KanbanBoardProps {
 }
 
 // Sortable Item Component
-function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lead: Lead) => void, onDelete: (lead: Lead) => void, key?: Key }) {
+function SortableLeadCard({ lead, onEdit, onDelete, onTogglePriority }: { lead: Lead, onEdit: (lead: Lead) => void, onDelete: (lead: Lead) => void, onTogglePriority: (lead: Lead) => void, key?: Key }) {
   const {
     attributes,
     listeners,
@@ -66,6 +66,10 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lea
       style={style}
       {...attributes}
       {...listeners}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onTogglePriority(lead);
+      }}
       className={cn(
         "bg-slate-800 p-4 rounded-xl border shadow-sm hover:shadow-lg hover:shadow-black/20 transition-all cursor-grab active:cursor-grabbing group",
         lead.isPriority ? "border-amber-500/40 bg-amber-500/[0.08]" : "border-slate-700"
@@ -276,6 +280,7 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
                 leads={cols[colStatus] || []}
                 onEdit={handleEdit}
                 onDelete={setDeletingLead}
+                onTogglePriority={(lead) => onUpdateLead(lead.id, { isPriority: !lead.isPriority })}
               />
             ))}
           </div>
@@ -325,7 +330,7 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
 // Column Component
 import { useDroppable } from '@dnd-kit/core';
 
-function Column({ status, leads, onEdit, onDelete }: { status: string, leads: Lead[], onEdit: (lead: Lead) => void, onDelete: (lead: Lead) => void, key?: Key }) {
+function Column({ status, leads, onEdit, onDelete, onTogglePriority }: { status: string, leads: Lead[], onEdit: (lead: Lead) => void, onDelete: (lead: Lead) => void, onTogglePriority: (lead: Lead) => void, key?: Key }) {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -355,7 +360,7 @@ function Column({ status, leads, onEdit, onDelete }: { status: string, leads: Le
         <SortableContext items={leads.map(l => l.id)}>
           <div className="flex flex-col gap-3 min-h-[100px]">
             {leads.map((lead) => (
-              <SortableLeadCard key={lead.id} lead={lead} onEdit={onEdit} onDelete={onDelete} />
+              <SortableLeadCard key={lead.id} lead={lead} onEdit={onEdit} onDelete={onDelete} onTogglePriority={onTogglePriority} />
             ))}
           </div>
         </SortableContext>

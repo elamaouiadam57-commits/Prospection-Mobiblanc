@@ -184,8 +184,9 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                 .map((lead) => (
                 <tr 
                   key={lead.id} 
+                  onDoubleClick={() => onUpdateLead(lead.id, { isPriority: !lead.isPriority })}
                   className={cn(
-                    "hover:bg-slate-700/50 transition-colors group",
+                    "hover:bg-slate-700/50 transition-colors group cursor-default",
                     lead.isPriority && "bg-amber-500/[0.12] hover:bg-amber-500/[0.15]"
                   )}
                 >
