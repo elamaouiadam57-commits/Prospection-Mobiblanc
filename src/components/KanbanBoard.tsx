@@ -68,7 +68,7 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lea
       {...listeners}
       className={cn(
         "bg-slate-800 p-4 rounded-xl border shadow-sm hover:shadow-lg hover:shadow-black/20 transition-all cursor-grab active:cursor-grabbing group",
-        lead.isPriority ? "border-amber-500/30" : "border-slate-700"
+        lead.isPriority ? "border-amber-500/40 bg-amber-500/[0.08]" : "border-slate-700"
       )}
     >
       <div className="flex justify-between items-start mb-2">

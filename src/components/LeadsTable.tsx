@@ -186,7 +186,7 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                   key={lead.id} 
                   className={cn(
                     "hover:bg-slate-700/50 transition-colors group",
-                    lead.isPriority && "bg-amber-500/5"
+                    lead.isPriority && "bg-amber-500/[0.12] hover:bg-amber-500/[0.15]"
                   )}
                 >
                   <td className="px-6 py-4 align-top">

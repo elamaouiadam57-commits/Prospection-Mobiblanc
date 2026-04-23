@@ -114,7 +114,7 @@ export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeleteP
                 key={pm.id}
                 className={cn(
                   "bg-slate-800/40 border rounded-3xl p-6 hover:border-slate-600 transition-all group h-full flex flex-col",
-                  isPriority ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5" : "border-slate-700/50"
+                  isPriority ? "border-amber-500/40 bg-amber-500/[0.12] shadow-lg shadow-amber-500/5" : "border-slate-700/50"
                 )}
               >
                 <div className="flex items-start justify-between mb-4">
