@@ -4,7 +4,7 @@ import { cn, formatDateSafe, getStatusOptions } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import { LeadFormModal } from './LeadFormModal';
 import { ConfirmModal } from './ConfirmModal';
-import { Edit2, Trash2, ChevronDown, Download } from 'lucide-react';
+import { Edit2, Trash2, ChevronDown, Download, Star } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface LeadsTableProps {
@@ -171,15 +171,31 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
             </thead>
             <tbody className="divide-y divide-slate-700/50">
               {leads
+                .slice()
                 .sort((a, b) => {
+                  // Priority sorting first
+                  if (a.isPriority && !b.isPriority) return -1;
+                  if (!a.isPriority && b.isPriority) return 1;
+
                   const dateA = a.dateContact || a.dateAjout;
                   const dateB = b.dateContact || b.dateAjout;
                   return new Date(dateB).getTime() - new Date(dateA).getTime();
                 })
                 .map((lead) => (
-                <tr key={lead.id} className="hover:bg-slate-700/50 transition-colors group">
+                <tr 
+                  key={lead.id} 
+                  className={cn(
+                    "hover:bg-slate-700/50 transition-colors group",
+                    lead.isPriority && "bg-amber-500/5"
+                  )}
+                >
                   <td className="px-6 py-4 align-top">
-                    <div className="font-medium text-slate-50">{lead.prenom} {lead.nom}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-slate-50">{lead.prenom} {lead.nom}</div>
+                      {lead.isPriority && (
+                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                      )}
+                    </div>
                     <div className="text-slate-400 text-xs mt-0.5">{lead.mail}</div>
                     {lead.numero && <div className="text-slate-500 text-xs mt-0.5">{lead.numero}</div>}
                   </td>

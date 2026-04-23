@@ -17,7 +17,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useState, useMemo } from 'react';
 import type { Key } from 'react';
 import { cn, formatDateSafe, getStatusOptions } from '../lib/utils';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Star } from 'lucide-react';
 
 const DEFAULT_COLUMNS: string[] = ['Nouveau', 'Contacté', 'Qualifié', 'Proposition', 'Gagné', 'Perdu'];
 
@@ -66,10 +66,18 @@ function SortableLeadCard({ lead, onEdit, onDelete }: { lead: Lead, onEdit: (lea
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm hover:shadow-lg hover:shadow-black/20 transition-all cursor-grab active:cursor-grabbing group"
+      className={cn(
+        "bg-slate-800 p-4 rounded-xl border shadow-sm hover:shadow-lg hover:shadow-black/20 transition-all cursor-grab active:cursor-grabbing group",
+        lead.isPriority ? "border-amber-500/30" : "border-slate-700"
+      )}
     >
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-medium text-slate-50 text-sm">{lead.prenom} {lead.nom}</h4>
+        <div className="flex items-center gap-2 min-w-0">
+          <h4 className="font-medium text-slate-50 text-sm truncate">{lead.prenom} {lead.nom}</h4>
+          {lead.isPriority && (
+            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+          )}
+        </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
@@ -168,10 +176,18 @@ export function KanbanBoard({ leads, onLeadMove, onUpdateLead, onDeleteLead }: K
       if (columnsMap[status]) {
         columnsMap[status].push(lead);
       } else {
-        // Fallback if status is somehow not in activeCols
         columnsMap[status] = [lead];
         if (!activeCols.includes(status)) activeCols.push(status);
       }
+    });
+
+    // Sort each column by priority
+    Object.keys(columnsMap).forEach(key => {
+      columnsMap[key].sort((a, b) => {
+        if (a.isPriority && !b.isPriority) return -1;
+        if (!a.isPriority && b.isPriority) return 1;
+        return 0;
+      });
     });
     
     return { activeColumns: activeCols, cols: columnsMap };

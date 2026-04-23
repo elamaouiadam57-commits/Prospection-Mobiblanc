@@ -74,6 +74,7 @@ export const fetchLeads = async (): Promise<Lead[]> => {
       notes: record.fields["Notes"] || '',
       scoreLead: record.fields["Score lead"] || 0,
       tags: parseTags(record.fields["Tags"] || record.fields["Mots-clés"] || record.fields["Labels"]),
+      isPriority: record.fields["Priorité"] || false,
     }));
   } catch (error) {
     console.error('Failed to fetch from Airtable:', error);
@@ -161,6 +162,7 @@ export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
               "Status": leadData.status || 'Nouveau',
               "Notes": leadData.notes,
               "Date d'ajout": new Date().toISOString().split('T')[0],
+              "Priorité": leadData.isPriority || false,
               ...(leadData.dateContact && { "Date de contact": leadData.dateContact }),
             }
           }
@@ -288,6 +290,7 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
           ...(leadData.status !== undefined && { "Status": leadData.status }),
           ...(leadData.notes !== undefined && { "Notes": leadData.notes }),
           ...(leadData.dateContact !== undefined && { "Date de contact": leadData.dateContact }),
+          ...(leadData.isPriority !== undefined && { "Priorité": leadData.isPriority }),
         },
         typecast: true,
       }),
@@ -311,6 +314,7 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
           ...(restLeadData.numero !== undefined && { "Numéro": restLeadData.numero }),
           ...(restLeadData.status !== undefined && { "Status": restLeadData.status }),
           ...(restLeadData.notes !== undefined && { "Notes": restLeadData.notes }),
+          ...(restLeadData.isPriority !== undefined && { "Priorité": restLeadData.isPriority }),
         };
 
         const retryResponse = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {

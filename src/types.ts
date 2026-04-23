@@ -18,6 +18,7 @@ export interface Lead {
   notes: string;
   scoreLead: number;
   tags?: string[];
+  isPriority?: boolean;
 }
 
 export interface Consultant {

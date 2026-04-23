@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X } from 'lucide-react';
+import { X, Star } from 'lucide-react';
 import { Lead } from '../types';
+import { cn } from '../lib/utils';
 
 interface LeadFormModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData, statusOp
     numero: '',
     status: 'Nouveau',
     notes: '',
+    isPriority: false,
   });
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData, statusOp
         numero: initialData.numero || '',
         status: initialData.status || 'Nouveau',
         notes: initialData.notes || '',
+        isPriority: initialData.isPriority || false,
       });
     } else if (!isOpen) {
       // Reset when closed
@@ -47,6 +50,7 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData, statusOp
         numero: '',
         status: 'Nouveau',
         notes: '',
+        isPriority: false,
       });
     }
   }, [initialData, isOpen]);
@@ -172,13 +176,28 @@ export function LeadFormModal({ isOpen, onClose, onSubmit, initialData, statusOp
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">Téléphone</label>
-                <input
-                  type="tel"
-                  value={formData.numero}
-                  onChange={e => setFormData({ ...formData, numero: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-slate-50 placeholder-slate-500"
-                  placeholder="+33 6 12 34 56 78"
-                />
+                <div className="flex gap-4">
+                  <input
+                    type="tel"
+                    value={formData.numero}
+                    onChange={e => setFormData({ ...formData, numero: e.target.value })}
+                    className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors text-slate-50 placeholder-slate-500"
+                    placeholder="+33 6 12 34 56 78"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, isPriority: !formData.isPriority })}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
+                      formData.isPriority 
+                        ? "bg-amber-500/10 border-amber-500/50 text-amber-400 font-semibold" 
+                        : "bg-slate-900/50 border-slate-600 text-slate-500 hover:text-slate-400"
+                    )}
+                  >
+                    <Star className={cn("w-4 h-4", formData.isPriority && "fill-amber-400")} />
+                    Prioritaire
+                  </button>
+                </div>
               </div>
 
               <div>

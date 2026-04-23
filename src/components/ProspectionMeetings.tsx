@@ -12,7 +12,8 @@ import {
   Trash2, 
   CheckCircle, 
   XCircle,
-  Users
+  Users,
+  Star
 } from 'lucide-react';
 import { PMFormModal } from './PMFormModal';
 
@@ -101,6 +102,9 @@ export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeleteP
         <AnimatePresence mode="popLayout">
           {filteredPMs.map((pm) => {
             const status = getStatusInfo(pm.status);
+            const lead = leads.find(l => l.id === pm.leadId);
+            const isPriority = lead?.isPriority;
+
             return (
               <motion.div
                 layout
@@ -108,7 +112,10 @@ export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeleteP
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 key={pm.id}
-                className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-6 hover:border-slate-600 transition-all group h-full flex flex-col"
+                className={cn(
+                  "bg-slate-800/40 border rounded-3xl p-6 hover:border-slate-600 transition-all group h-full flex flex-col",
+                  isPriority ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5" : "border-slate-700/50"
+                )}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className={cn("px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5", status.bg, status.color)}>
@@ -133,7 +140,12 @@ export function ProspectionMeetings({ pms, leads, onAddPM, onUpdatePM, onDeleteP
 
                 <div className="space-y-4 flex-1">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-100 line-clamp-1">{pm.leadName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-slate-100 line-clamp-1">{pm.leadName}</h3>
+                      {isPriority && (
+                        <Star className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 text-slate-400 text-sm mt-1">
                       <MapPin className="w-4 h-4 text-slate-500" />
                       <span>{pm.location}</span>
