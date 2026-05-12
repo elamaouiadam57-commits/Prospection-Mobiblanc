@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/airtable/(.*)",
+      "destination": "/api/airtable"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
