@@ -22,7 +22,7 @@ import {
 import { ProspectionMeetings } from './components/ProspectionMeetings';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban' | 'reports' | 'prospection-meetings'>('dashboard');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [pms, setPMs] = useState<ProspectionMeeting[]>([]);
@@ -178,10 +178,6 @@ export default function App() {
     const dateB = new Date(b.dateAjout).getTime();
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
   });
-
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
-  }
 
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden font-sans antialiased text-slate-50 selection:bg-blue-500/30 selection:text-blue-200">
