@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { Lead, LeadStatus, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
+import { Lead, LeadStatus, ProspectionMeeting } from '../types';
 
 // Helper to check if Airtable is configured
 export const isAirtableConfigured = () => {

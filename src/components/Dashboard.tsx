@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { Lead, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
+import { Lead, ProspectionMeeting } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Target, Building2, UserCheck, ChevronDown, Clock, Video, Calendar, Star } from 'lucide-react';
+import { Users, Target, Building2, ChevronDown, Clock, Video, Calendar, Star } from 'lucide-react';
 
 interface DashboardProps {
   leads: Lead[];
-  consultants?: Consultant[];
-  interviews?: ConsultantInterview[];
   pms?: ProspectionMeeting[];
 }
 
-export function Dashboard({ leads, consultants = [], interviews = [], pms = [] }: DashboardProps) {
+export function Dashboard({ leads, pms = [] }: DashboardProps) {
   const [expandedCompany, setExpandedCompany] = useState<string | null>(null);
 
   const isWon = (s: string) => {
@@ -109,8 +107,6 @@ export function Dashboard({ leads, consultants = [], interviews = [], pms = [] }
     { label: 'Total Prospects', value: totalLeads.toString(), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
     { label: 'Prioritaires', value: prioritizedLeads.toString(), icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { label: 'Entreprises', value: uniqueCompanies.size.toString(), icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'Consultants', value: consultants.length.toString(), icon: UserCheck, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-    { label: 'Entretiens', value: interviews.length.toString(), icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { label: 'RDV de la semaine', value: pmsThisWeek.toString(), icon: Calendar, color: 'text-amber-400', bg: 'bg-amber-500/10' },
   ];
 

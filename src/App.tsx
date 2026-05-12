@@ -7,7 +7,7 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { Reports } from './components/Reports';
 import { AirtableBanner } from './components/AirtableBanner';
 import { Login } from './components/Login';
-import { Lead, LeadStatus, Consultant, ConsultantInterview, ProspectionMeeting } from './types';
+import { Lead, LeadStatus, ProspectionMeeting } from './types';
 import { 
   fetchLeads, 
   updateLeadStatus, 
@@ -19,25 +19,12 @@ import {
   updatePM,
   deletePM
 } from './services/airtable';
-import {
-  fetchConsultants,
-  fetchInterviews,
-  createConsultant,
-  updateConsultant,
-  deleteConsultant,
-  createInterview,
-  updateInterview,
-  deleteInterview
-} from './services/api';
-import { Consultants } from './components/Consultants';
 import { ProspectionMeetings } from './components/ProspectionMeetings';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants' | 'prospection-meetings'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'table' | 'kanban' | 'reports' | 'prospection-meetings'>('dashboard');
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [consultants, setConsultants] = useState<Consultant[]>([]);
-  const [interviews, setInterviews] = useState<ConsultantInterview[]>([]);
   const [pms, setPMs] = useState<ProspectionMeeting[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -51,15 +38,11 @@ export default function App() {
     else setIsRefreshing(true);
     
     try {
-      const [leadsData, consultantsData, interviewsData, pmsData] = await Promise.all([
+      const [leadsData, pmsData] = await Promise.all([
         fetchLeads(),
-        fetchConsultants(),
-        fetchInterviews(),
         fetchPMs()
       ]);
       setLeads(leadsData);
-      setConsultants(consultantsData);
-      setInterviews(interviewsData);
       setPMs(pmsData);
       setError(null);
     } catch (err: any) {
@@ -154,67 +137,6 @@ export default function App() {
     }
   };
 
-  const handleAddConsultant = async (data: Partial<Consultant>) => {
-    try {
-      const newConsultant = await createConsultant(data);
-      setConsultants(prev => [newConsultant, ...prev]);
-    } catch (error) {
-      console.error("Failed to add consultant", error);
-      throw error;
-    }
-  };
-
-  const handleAddInterview = async (data: Partial<ConsultantInterview>) => {
-    try {
-      const newInterview = await createInterview(data);
-      setInterviews(prev => [newInterview, ...prev]);
-    } catch (error) {
-      console.error("Failed to add interview", error);
-      throw error;
-    }
-  };
-
-  const handleUpdateConsultant = async (id: string, data: Partial<Consultant>) => {
-    try {
-      const updated = await updateConsultant(id, data);
-      setConsultants(prev => prev.map(c => c.id === id ? updated : c));
-    } catch (error) {
-      console.error("Failed to update consultant", error);
-      throw error;
-    }
-  };
-
-  const handleDeleteConsultant = async (id: string) => {
-    try {
-      await deleteConsultant(id);
-      setConsultants(prev => prev.filter(c => c.id !== id));
-      setInterviews(prev => prev.filter(i => i.consultantId !== id));
-    } catch (error) {
-      console.error("Failed to delete consultant", error);
-      throw error;
-    }
-  };
-
-  const handleUpdateInterview = async (id: string, data: Partial<ConsultantInterview>) => {
-    try {
-      const updated = await updateInterview(id, data);
-      setInterviews(prev => prev.map(i => i.id === id ? updated : i));
-    } catch (error) {
-      console.error("Failed to update interview", error);
-      throw error;
-    }
-  };
-
-  const handleDeleteInterview = async (id: string) => {
-    try {
-      await deleteInterview(id);
-      setInterviews(prev => prev.filter(i => i.id !== id));
-    } catch (error) {
-      console.error("Failed to delete interview", error);
-      throw error;
-    }
-  };
-
   const handleAddPM = async (data: Partial<ProspectionMeeting>) => {
     try {
       const newPM = await createPM(data);
@@ -255,14 +177,6 @@ export default function App() {
     const dateA = new Date(a.dateAjout).getTime();
     const dateB = new Date(b.dateAjout).getTime();
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-  });
-
-  const filteredConsultants = consultants.filter(c => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    const fullName = `${c.prenom} ${c.nom}`.toLowerCase();
-    const spec = (c.specialite || '').toLowerCase();
-    return fullName.includes(query) || spec.includes(query);
   });
 
   if (!isAuthenticated) {
@@ -325,8 +239,6 @@ export default function App() {
               {currentView === 'dashboard' && (
                 <Dashboard 
                   leads={filteredLeads} 
-                  consultants={consultants} 
-                  interviews={interviews} 
                   pms={pms}
                 />
               )}
@@ -346,19 +258,7 @@ export default function App() {
                   onDeleteLead={handleDeleteLead}
                 />
               )}
-              {currentView === 'reports' && <Reports leads={filteredLeads} interviews={interviews} pms={pms} />}
-              {currentView === 'consultants' && (
-                <Consultants 
-                  consultants={filteredConsultants} 
-                  interviews={interviews}
-                  onAddConsultant={handleAddConsultant}
-                  onUpdateConsultant={handleUpdateConsultant}
-                  onDeleteConsultant={handleDeleteConsultant}
-                  onAddInterview={handleAddInterview}
-                  onUpdateInterview={handleUpdateInterview}
-                  onDeleteInterview={handleDeleteInterview}
-                />
-              )}
+              {currentView === 'reports' && <Reports leads={filteredLeads} pms={pms} />}
               {currentView === 'prospection-meetings' && (
                 <ProspectionMeetings 
                   pms={pms} 

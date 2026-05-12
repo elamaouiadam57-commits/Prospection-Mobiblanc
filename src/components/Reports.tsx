@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Lead, ConsultantInterview, ProspectionMeeting } from '../types';
+import { Lead, ProspectionMeeting } from '../types';
 import { motion } from 'motion/react';
 import { 
   Users, 
@@ -9,17 +9,15 @@ import {
   TrendingUp,
   Clock,
   Building2,
-  Video,
   Star
 } from 'lucide-react';
 
 interface ReportsProps {
   leads: Lead[];
-  interviews?: ConsultantInterview[];
   pms?: ProspectionMeeting[];
 }
 
-export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
+export function Reports({ leads, pms = [] }: ReportsProps) {
   // Helpers for status checks
   const isWon = (s: string) => {
     const lower = s.toLowerCase();
@@ -75,7 +73,6 @@ export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
       const d = l.dateContact ? parseDateLocal(l.dateContact) : parseDateLocal(l.dateAjout);
       return d >= startOfWeek && isWon(l.status);
     });
-    const interviewsThisWeek = interviews.filter(i => parseDateLocal(i.date) >= startOfWeek);
     const pmsThisWeek = pms.filter(p => parseDateLocal(p.date) >= startOfWeek);
     const prioritized = leads.filter(l => l.isPriority).length;
 
@@ -83,12 +80,11 @@ export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
       added: added.length,
       contacted: contacted.length,
       won: won.length,
-      interviews: interviewsThisWeek.length,
       pms: pmsThisWeek.length,
       total: leads.length,
       prioritized
     };
-  }, [leads, interviews, pms, startOfWeek]);
+  }, [leads, pms, startOfWeek]);
 
   // Group activity by day for this week (Added OR Contacted)
   const dailyActivity = useMemo(() => {
@@ -209,21 +205,6 @@ export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
             <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400 font-medium">
               <TrendingUp className="w-3 h-3" />
               <span>Succès cette semaine</span>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            whileHover={{ y: -4 }}
-            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
-          >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Video className="w-12 h-12 text-purple-400" />
-            </div>
-            <p className="text-slate-400 text-sm font-medium">Entretiens Consultants</p>
-            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.interviews}</h2>
-            <div className="mt-4 flex items-center gap-2 text-xs text-purple-400 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>Entretiens réalisés</span>
             </div>
           </motion.div>
 

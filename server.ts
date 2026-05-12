@@ -9,8 +9,6 @@ const __dirname = path.dirname(__filename);
 
 // Data files paths
 const DATA_DIR = path.join(process.cwd(), "data");
-const CONSULTANTS_FILE = path.join(DATA_DIR, "consultants.json");
-const INTERVIEWS_FILE = path.join(DATA_DIR, "interviews.json");
 const PMS_FILE = path.join(DATA_DIR, "pms.json");
 
 async function ensureDataDir() {
@@ -18,15 +16,6 @@ async function ensureDataDir() {
     await fs.mkdir(DATA_DIR, { recursive: true });
     // Initialize files if they don't exist
     const seeds = {
-      [CONSULTANTS_FILE]: [
-        { id: 'c1', prenom: 'Jean', nom: 'Dupont', email: 'j.dupont@consult.com', specialite: 'Cloud Architecture', experience: 12, dateAjout: '2026-04-01T10:00:00Z' },
-        { id: 'c2', prenom: 'Alice', nom: 'Vasseur', email: 'a.vasseur@consult.com', specialite: 'Data Science', experience: 8, dateAjout: '2026-04-05T09:00:00Z' }
-      ],
-      [INTERVIEWS_FILE]: [
-        { id: 'i1', consultantId: 'c1', consultantName: 'Jean Dupont', date: '2026-04-10T14:00:00Z', notes: 'Très bon profil technique, maîtrise AWS et GCP.', rating: 5, status: 'Réalisé' },
-        { id: 'i2', consultantId: 'c2', consultantName: 'Alice Vasseur', date: '2026-04-12T11:00:00Z', notes: 'Niveau d\'expertise correct, mais manque d\'expérience sur Spark.', rating: 3, status: 'Réalisé' },
-        { id: 'i3', consultantId: 'c1', consultantName: 'Jean Dupont', date: '2026-04-22T10:00:00Z', notes: 'Entretien final avec le client.', rating: 0, status: 'Programmé' }
-      ],
       [PMS_FILE]: [
         { id: 'pm1', leadId: '1', leadName: 'Sarah Jenkins', date: '2026-04-25T14:30:00Z', location: 'Visio', notes: 'Présentation de la roadmap produit.', status: 'Prévu' },
         { id: 'pm2', leadId: '3', leadName: 'Elena Rodriguez', date: '2026-04-20T10:00:00Z', location: 'Physique', notes: 'Discussion sur le budget Q3.', status: 'Terminé' }
@@ -83,108 +72,6 @@ async function startServer() {
     } catch (error: any) {
       console.error("Airtable Proxy Error:", error);
       res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Local Storage Endpoints (Consultants & Interviews)
-  app.get("/api/consultants", async (req, res) => {
-    try {
-      const data = await fs.readFile(CONSULTANTS_FILE, "utf-8");
-      res.json(JSON.parse(data));
-    } catch (err) {
-      res.status(500).json({ error: "Failed to read consultants" });
-    }
-  });
-
-  app.post("/api/consultants", async (req, res) => {
-    try {
-      const consultants = JSON.parse(await fs.readFile(CONSULTANTS_FILE, "utf-8"));
-      const newConsultant = { ...req.body, id: Date.now().toString() };
-      consultants.push(newConsultant);
-      await fs.writeFile(CONSULTANTS_FILE, JSON.stringify(consultants, null, 2));
-      res.json(newConsultant);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to save consultant" });
-    }
-  });
-
-  app.patch("/api/consultants/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      let consultants = JSON.parse(await fs.readFile(CONSULTANTS_FILE, "utf-8"));
-      const index = consultants.findIndex((c: any) => c.id === id);
-      if (index === -1) return res.status(404).json({ error: "Not found" });
-      consultants[index] = { ...consultants[index], ...req.body };
-      await fs.writeFile(CONSULTANTS_FILE, JSON.stringify(consultants, null, 2));
-      res.json(consultants[index]);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to update consultant" });
-    }
-  });
-
-  app.delete("/api/consultants/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      let consultants = JSON.parse(await fs.readFile(CONSULTANTS_FILE, "utf-8"));
-      consultants = consultants.filter((c: any) => c.id !== id);
-      await fs.writeFile(CONSULTANTS_FILE, JSON.stringify(consultants, null, 2));
-
-      // Also cleanup interviews
-      let interviews = JSON.parse(await fs.readFile(INTERVIEWS_FILE, "utf-8"));
-      interviews = interviews.filter((i: any) => i.consultantId !== id);
-      await fs.writeFile(INTERVIEWS_FILE, JSON.stringify(interviews, null, 2));
-
-      res.status(204).send();
-    } catch (err) {
-      res.status(500).json({ error: "Failed to delete consultant" });
-    }
-  });
-
-  // Interviews Endpoints
-  app.get("/api/interviews", async (req, res) => {
-    try {
-      const data = await fs.readFile(INTERVIEWS_FILE, "utf-8");
-      res.json(JSON.parse(data));
-    } catch (err) {
-      res.status(500).json({ error: "Failed to read interviews" });
-    }
-  });
-
-  app.post("/api/interviews", async (req, res) => {
-    try {
-      const interviews = JSON.parse(await fs.readFile(INTERVIEWS_FILE, "utf-8"));
-      const newInterview = { ...req.body, id: Date.now().toString() };
-      interviews.push(newInterview);
-      await fs.writeFile(INTERVIEWS_FILE, JSON.stringify(interviews, null, 2));
-      res.json(newInterview);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to save interview" });
-    }
-  });
-
-  app.patch("/api/interviews/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      let interviews = JSON.parse(await fs.readFile(INTERVIEWS_FILE, "utf-8"));
-      const index = interviews.findIndex((i: any) => i.id === id);
-      if (index === -1) return res.status(404).json({ error: "Not found" });
-      interviews[index] = { ...interviews[index], ...req.body };
-      await fs.writeFile(INTERVIEWS_FILE, JSON.stringify(interviews, null, 2));
-      res.json(interviews[index]);
-    } catch (err) {
-      res.status(500).json({ error: "Failed to update interview" });
-    }
-  });
-
-  app.delete("/api/interviews/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      let interviews = JSON.parse(await fs.readFile(INTERVIEWS_FILE, "utf-8"));
-      interviews = interviews.filter((i: any) => i.id !== id);
-      await fs.writeFile(INTERVIEWS_FILE, JSON.stringify(interviews, null, 2));
-      res.status(204).send();
-    } catch (err) {
-      res.status(500).json({ error: "Failed to delete interview" });
     }
   });
 
