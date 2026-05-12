@@ -1,12 +1,6 @@
 /// <reference types="vite/client" />
 import { Lead, LeadStatus, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
 
-// Empty placeholders since mock file was deleted
-const MOCK_LEADS: Lead[] = [];
-const MOCK_CONSULTANTS: Consultant[] = [];
-const MOCK_INTERVIEWS: ConsultantInterview[] = [];
-const MOCK_PMS: ProspectionMeeting[] = [];
-
 // Helper to check if Airtable is configured
 export const isAirtableConfigured = () => {
   return Boolean(
@@ -48,8 +42,8 @@ const parseTags = (rawTags: any): string[] => {
 // Fetch leads from Airtable (or return mock data if not configured)
 export const fetchLeads = async (): Promise<Lead[]> => {
   if (!isAirtableConfigured()) {
-    console.log('Airtable not configured. Using mock data.');
-    return [...MOCK_LEADS];
+    console.log('Airtable not configured. Returning empty list.');
+    return [];
   }
 
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
@@ -375,8 +369,8 @@ export const deleteLead = async (leadId: string): Promise<void> => {
 
 export const fetchPMs = async (): Promise<ProspectionMeeting[]> => {
   if (!isAirtablePMConfigured()) {
-    console.log('Airtable PM not configured. Using mock data.');
-    return [...MOCK_PMS];
+    console.log('Airtable PM not configured. Returning empty list.');
+    return [];
   }
 
   const pmTableName = import.meta.env.VITE_AIRTABLE_PM_TABLE_NAME || 'Meetings';
@@ -387,8 +381,8 @@ export const fetchPMs = async (): Promise<ProspectionMeeting[]> => {
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      console.warn('Meeting table maybe not exist, falling back to mock');
-      return [...MOCK_PMS];
+      console.warn('Meeting table maybe not exist, returning empty');
+      return [];
     }
 
     const data = await response.json();
@@ -403,7 +397,7 @@ export const fetchPMs = async (): Promise<ProspectionMeeting[]> => {
     }));
   } catch (error) {
     console.error('Failed to fetch PMs from Airtable:', error);
-    return [...MOCK_PMS];
+    return [];
   }
 };
 
