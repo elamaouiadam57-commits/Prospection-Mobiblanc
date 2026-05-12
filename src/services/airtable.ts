@@ -1,6 +1,11 @@
 /// <reference types="vite/client" />
 import { Lead, LeadStatus, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
-import { MOCK_LEADS, MOCK_CONSULTANTS, MOCK_INTERVIEWS, MOCK_PMS } from '../data/mock';
+
+// Empty placeholders since mock file was deleted
+const MOCK_LEADS: Lead[] = [];
+const MOCK_CONSULTANTS: Consultant[] = [];
+const MOCK_INTERVIEWS: ConsultantInterview[] = [];
+const MOCK_PMS: ProspectionMeeting[] = [];
 
 // Helper to check if Airtable is configured
 export const isAirtableConfigured = () => {
@@ -8,6 +13,15 @@ export const isAirtableConfigured = () => {
     import.meta.env.VITE_AIRTABLE_PAT &&
     import.meta.env.VITE_AIRTABLE_BASE_ID &&
     import.meta.env.VITE_AIRTABLE_TABLE_NAME
+  );
+};
+
+// Helper for PM specific configuration
+export const isAirtablePMConfigured = () => {
+  return Boolean(
+    import.meta.env.VITE_AIRTABLE_PAT &&
+    import.meta.env.VITE_AIRTABLE_BASE_ID &&
+    (import.meta.env.VITE_AIRTABLE_PM_TABLE_NAME || import.meta.env.VITE_AIRTABLE_TABLE_NAME)
   );
 };
 
@@ -38,20 +52,15 @@ export const fetchLeads = async (): Promise<Lead[]> => {
     return [...MOCK_LEADS];
   }
 
-  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
-  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+  const encodedTable = encodeURIComponent(tableName || '');
 
   try {
-    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}?_t=${Date.now()}`, {
-      headers: {
-        Authorization: `Bearer ${pat}`,
-      }
-    });
+    const response = await fetch(`/api/airtable/${encodedTable}?_t=${Date.now()}`);
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur ${response.status}: ${errData.error?.message || response.statusText}`);
+      throw new Error(`Erreur ${response.status}: ${errData.error?.message || errData.error || response.statusText}`);
     }
 
     const data = await response.json();
@@ -89,15 +98,13 @@ export const updateLeadStatus = async (leadId: string, newStatus: LeadStatus): P
     return;
   }
 
-  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
-  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+  const encodedTable = encodeURIComponent(tableName || '');
 
   try {
-    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+    const response = await fetch(`/api/airtable/${encodedTable}/${leadId}`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${pat}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -121,6 +128,7 @@ export const updateLeadStatus = async (leadId: string, newStatus: LeadStatus): P
 // Create a new lead in Airtable
 export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
   if (!isAirtableConfigured()) {
+    // ... mock logic ...
     const newLead: Lead = {
       ...leadData,
       id: `mock-${Date.now()}`,
@@ -138,15 +146,13 @@ export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
     return newLead;
   }
 
-  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
-  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+  const encodedTable = encodeURIComponent(tableName || '');
 
   try {
-    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+    const response = await fetch(`/api/airtable/${encodedTable}`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${pat}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -173,37 +179,39 @@ export const createLead = async (leadData: Partial<Lead>): Promise<Lead> => {
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      const errorMessage = errData.error?.message || errData.error?.type || response.statusText;
+      const errorMessage = errData.error?.message || errData.error || response.statusText;
       
       // If the error is about the missing "Date de contact" column, retry without it
-      if (errorMessage.includes('Unknown field name: "Date de contact"') || errorMessage.includes('Date de contact')) {
+      if (typeof errorMessage === 'string' && (errorMessage.includes('Unknown field name: "Date de contact"') || errorMessage.includes('Date de contact'))) {
         console.warn('Column "Date de contact" is missing in Airtable. Retrying without it...');
         const fallbackBody = {
-          fields: {
-            "Prénom": leadData.prenom,
-            "Nom": leadData.nom,
-            "Fonction": leadData.fonction,
-            "Entreprise": leadData.entreprise,
-            "Mail": leadData.mail,
-            "Numéro": leadData.numero,
-            "Status": leadData.status || 'Nouveau',
-            "Notes": leadData.notes,
-            "Date d'ajout": new Date().toISOString().split('T')[0],
-          }
+          records: [{
+            fields: {
+              "Prénom": leadData.prenom,
+              "Nom": leadData.nom,
+              "Fonction": leadData.fonction,
+              "Entreprise": leadData.entreprise,
+              "Mail": leadData.mail,
+              "Numéro": leadData.numero,
+              "Status": leadData.status || 'Nouveau',
+              "Notes": leadData.notes,
+              "Date d'ajout": new Date().toISOString().split('T')[0],
+            }
+          }],
+          typecast: true
         };
         
-        const retryResponse = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}`, {
+        const retryResponse = await fetch(`/api/airtable/${encodedTable}`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${pat}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ records: [fallbackBody], typecast: true }),
+          body: JSON.stringify(fallbackBody),
         });
         
         if (!retryResponse.ok) {
           const retryErrData = await retryResponse.json().catch(() => ({}));
-          throw new Error(`Erreur ${retryResponse.status}: ${retryErrData.error?.message || retryErrData.error?.type || retryResponse.statusText}`);
+          throw new Error(`Erreur ${retryResponse.status}: ${retryErrData.error?.message || retryErrData.error || retryResponse.statusText}`);
         }
         
         const data = await retryResponse.json();
@@ -268,15 +276,13 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
     return;
   }
 
-  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
-  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+  const encodedTable = encodeURIComponent(tableName || '');
 
   try {
-    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+    const response = await fetch(`/api/airtable/${encodedTable}/${leadId}`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${pat}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -298,10 +304,10 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      const errorMessage = errData.error?.message || errData.error?.type || response.statusText;
+      const errorMessage = errData.error?.message || errData.error || response.statusText;
       
       // If the error is about the missing "Date de contact" column, retry without it
-      if (leadData.dateContact !== undefined && (errorMessage.includes('Unknown field name: "Date de contact"') || errorMessage.includes('Date de contact'))) {
+      if (leadData.dateContact !== undefined && typeof errorMessage === 'string' && (errorMessage.includes('Unknown field name: "Date de contact"') || errorMessage.includes('Date de contact'))) {
         console.warn('Column "Date de contact" is missing in Airtable. Retrying without it...');
         const { dateContact, ...restLeadData } = leadData;
         
@@ -317,10 +323,9 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
           ...(restLeadData.isPriority !== undefined && { "Priorité": restLeadData.isPriority }),
         };
 
-        const retryResponse = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+        const retryResponse = await fetch(`/api/airtable/${encodedTable}/${leadId}`, {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${pat}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ fields: fallbackFields, typecast: true }),
@@ -328,7 +333,7 @@ export const updateLead = async (leadId: string, leadData: Partial<Lead>): Promi
 
         if (!retryResponse.ok) {
           const retryErrData = await retryResponse.json().catch(() => ({}));
-          throw new Error(`Airtable API error: ${retryErrData.error?.message || retryErrData.error?.type || retryResponse.statusText}`);
+          throw new Error(`Airtable API error: ${retryErrData.error?.message || retryErrData.error || retryResponse.statusText}`);
         }
         return;
       }
@@ -348,21 +353,17 @@ export const deleteLead = async (leadId: string): Promise<void> => {
     return;
   }
 
-  const pat = import.meta.env.VITE_AIRTABLE_PAT?.trim();
-  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID?.trim().replace(/\/$/, '');
   const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME?.trim();
+  const encodedTable = encodeURIComponent(tableName || '');
 
   try {
-    const response = await fetch(`https://api.airtable.com/v0/${baseId}/${tableName}/${leadId}`, {
+    const response = await fetch(`/api/airtable/${encodedTable}/${leadId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${pat}`,
-      },
     });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Airtable API error: ${errData.error?.message || errData.error?.type || response.statusText}`);
+      throw new Error(`Airtable API error: ${errData.error?.message || errData.error || response.statusText}`);
     }
   } catch (error) {
     console.error('Failed to delete from Airtable:', error);
@@ -370,146 +371,237 @@ export const deleteLead = async (leadId: string): Promise<void> => {
   }
 };
 
-// --- CONSULTANTS METHODS (LocalStorage) ---
-
-const CONSULTANTS_STORAGE_KEY = 'crm_consultants_data';
-const INTERVIEWS_STORAGE_KEY = 'crm_interviews_data';
-
-export const fetchConsultants = async (): Promise<Consultant[]> => {
-  const stored = localStorage.getItem(CONSULTANTS_STORAGE_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Failed to parse stored consultants', e);
-    }
-  }
-  // Initial seeding with mock data if empty
-  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(MOCK_CONSULTANTS));
-  return [...MOCK_CONSULTANTS];
-};
-
-export const createConsultant = async (data: Partial<Consultant>): Promise<Consultant> => {
-  const consultants = await fetchConsultants();
-  const newConsultant = {
-    ...data,
-    id: `c-${Date.now()}`,
-    dateAjout: new Date().toISOString(),
-  } as Consultant;
-  
-  const updated = [newConsultant, ...consultants];
-  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(updated));
-  return newConsultant;
-};
-
-// --- INTERVIEWS METHODS (LocalStorage) ---
-
-export const fetchInterviews = async (): Promise<ConsultantInterview[]> => {
-  const stored = localStorage.getItem(INTERVIEWS_STORAGE_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Failed to parse stored interviews', e);
-    }
-  }
-  // Initial seeding with mock data if empty
-  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(MOCK_INTERVIEWS));
-  return [...MOCK_INTERVIEWS];
-};
-
-export const createInterview = async (data: Partial<ConsultantInterview>): Promise<ConsultantInterview> => {
-  const interviews = await fetchInterviews();
-  const newInterview = {
-    ...data,
-    id: `i-${Date.now()}`,
-  } as ConsultantInterview;
-  
-  const updated = [newInterview, ...interviews];
-  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
-  return newInterview;
-};
-
-export const updateConsultant = async (id: string, data: Partial<Consultant>): Promise<Consultant> => {
-  const consultants = await fetchConsultants();
-  const updated = consultants.map(c => c.id === id ? { ...c, ...data } : c);
-  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(updated));
-  const result = updated.find(c => c.id === id);
-  if (!result) throw new Error('Consultant not found');
-  return result;
-};
-
-export const deleteConsultant = async (id: string): Promise<void> => {
-  const consultants = await fetchConsultants();
-  const updated = consultants.filter(c => c.id !== id);
-  localStorage.setItem(CONSULTANTS_STORAGE_KEY, JSON.stringify(updated));
-  
-  // Also delete associated interviews
-  const interviews = await fetchInterviews();
-  const updatedInterviews = interviews.filter(i => i.consultantId !== id);
-  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updatedInterviews));
-};
-
-export const updateInterview = async (id: string, data: Partial<ConsultantInterview>): Promise<ConsultantInterview> => {
-  const interviews = await fetchInterviews();
-  const updated = interviews.map(i => i.id === id ? { ...i, ...data } : i);
-  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
-  const result = updated.find(i => i.id === id);
-  if (!result) throw new Error('Interview not found');
-  return result;
-};
-
-export const deleteInterview = async (id: string): Promise<void> => {
-  const interviews = await fetchInterviews();
-  const updated = interviews.filter(i => i.id !== id);
-  localStorage.setItem(INTERVIEWS_STORAGE_KEY, JSON.stringify(updated));
-};
-
-// --- PROSPECTION MEETINGS METHODS (LocalStorage) ---
-
-const PM_STORAGE_KEY = 'crm_pm_data';
+// --- PROSPECTION MEETINGS METHODS (Airtable) ---
 
 export const fetchPMs = async (): Promise<ProspectionMeeting[]> => {
-  const stored = localStorage.getItem(PM_STORAGE_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch (e) {
-      console.error('Failed to parse stored PMs', e);
-    }
+  if (!isAirtablePMConfigured()) {
+    console.log('Airtable PM not configured. Using mock data.');
+    return [...MOCK_PMS];
   }
-  // Initialize with mocks if empty
-  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(MOCK_PMS));
-  return [...MOCK_PMS];
+
+  const pmTableName = import.meta.env.VITE_AIRTABLE_PM_TABLE_NAME || 'Meetings';
+  const encodedTable = encodeURIComponent(pmTableName);
+
+  try {
+    const response = await fetch(`/api/airtable/${encodedTable}?_t=${Date.now()}`);
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      console.warn('Meeting table maybe not exist, falling back to mock');
+      return [...MOCK_PMS];
+    }
+
+    const data = await response.json();
+    return data.records.map((record: any) => ({
+      id: record.id,
+      leadId: record.fields["Lead ID"] || '',
+      leadName: record.fields["Name"] || record.fields["Lead Name"] || '',
+      date: record.fields["Date & heure"] || record.fields["Date"] || record.createdTime,
+      location: record.fields["Lieu/ type"] || record.fields["Lieu"] || record.fields["Location"] || 'Visio',
+      notes: record.fields["Notes / Objectifs"] || record.fields["Notes"] || '',
+      status: record.fields["Statut"] || record.fields["Status"] || 'Prévu',
+    }));
+  } catch (error) {
+    console.error('Failed to fetch PMs from Airtable:', error);
+    return [...MOCK_PMS];
+  }
 };
 
 export const createPM = async (data: Partial<ProspectionMeeting>): Promise<ProspectionMeeting> => {
-  const pms = await fetchPMs();
-  const newPM: ProspectionMeeting = {
-    id: Math.random().toString(36).substr(2, 9),
-    leadId: data.leadId || '',
-    leadName: data.leadName || '',
-    date: data.date || new Date().toISOString(),
-    location: data.location || 'Visio',
-    notes: data.notes || '',
-    status: data.status || 'Prévu',
-  };
-  const updated = [newPM, ...pms];
-  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(updated));
-  return newPM;
+  if (!isAirtablePMConfigured()) {
+    const newPM = {
+      ...data,
+      id: `mock-pm-${Date.now()}`,
+    } as ProspectionMeeting;
+    return newPM;
+  }
+
+  const pmTableName = import.meta.env.VITE_AIRTABLE_PM_TABLE_NAME || 'Meetings';
+  const encodedTable = encodeURIComponent(pmTableName);
+
+  try {
+    const fields: any = {
+      "Name": data.leadName,
+      "Date & heure": data.date,
+      "Lieu/ type": data.location,
+      "Notes / Objectifs": data.notes,
+      "Statut": data.status || 'Prévu',
+    };
+
+    const response = await fetch(`/api/airtable/${encodedTable}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        records: [{ fields }],
+        typecast: true
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errorMessage = errData.error?.message || response.statusText;
+      
+      // Handle missing "Lead ID" or other non-essential columns silently by retrying
+      if (typeof errorMessage === 'string' && errorMessage.includes('Unknown field name')) {
+        console.warn('Field missing in Airtable PM table, retrying with minimal fields...');
+        // If it failed, let's try the absolute minimum
+        const minimalFields = {
+          "Name": data.leadName,
+          "Date & heure": data.date,
+          "Lieu/ type": data.location,
+          "Statut": data.status || 'Prévu',
+        };
+        
+        const retryResponse = await fetch(`/api/airtable/${encodedTable}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            records: [{ fields: minimalFields }],
+            typecast: true
+          })
+        });
+
+        if (!retryResponse.ok) {
+          const retryErrData = await retryResponse.json().catch(() => ({}));
+          throw new Error(`Failed to create PM in Airtable (Retry): ${retryErrData.error?.message || retryResponse.statusText}`);
+        }
+        
+        const retryResult = await retryResponse.json();
+        const record = retryResult.records[0];
+        return {
+          id: record.id,
+          leadId: '',
+          leadName: record.fields["Name"] || '',
+          date: record.fields["Date & heure"] || '',
+          location: record.fields["Lieu/ type"] || 'Visio',
+          notes: record.fields["Notes / Objectifs"] || '',
+          status: record.fields["Statut"] || 'Prévu',
+        };
+      }
+      
+      throw new Error(`Failed to create PM in Airtable: ${errorMessage}`);
+    }
+
+    const result = await response.json();
+    const record = result.records[0];
+
+    return {
+      id: record.id,
+      leadId: '',
+      leadName: record.fields["Name"] || '',
+      date: record.fields["Date & heure"] || '',
+      location: record.fields["Lieu/ type"] || 'Visio',
+      notes: record.fields["Notes / Objectifs"] || '',
+      status: record.fields["Statut"] || 'Prévu',
+    };
+  } catch (error) {
+    console.error('Failed to create PM:', error);
+    throw error;
+  }
 };
 
 export const updatePM = async (id: string, data: Partial<ProspectionMeeting>): Promise<ProspectionMeeting> => {
-  const pms = await fetchPMs();
-  const updated = pms.map(pm => pm.id === id ? { ...pm, ...data } : pm);
-  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(updated));
-  const result = updated.find(pm => pm.id === id);
-  if (!result) throw new Error('PM not found');
-  return result;
+  if (!isAirtablePMConfigured() || id.startsWith('mock')) {
+    return { ...data, id } as ProspectionMeeting;
+  }
+
+  const pmTableName = import.meta.env.VITE_AIRTABLE_PM_TABLE_NAME || 'Meetings';
+  const encodedTable = encodeURIComponent(pmTableName);
+
+  try {
+    const fields: any = {
+      ...(data.leadName && { "Name": data.leadName }),
+      ...(data.date && { "Date & heure": data.date }),
+      ...(data.location && { "Lieu/ type": data.location }),
+      ...(data.notes !== undefined && { "Notes / Objectifs": data.notes }),
+      ...(data.status && { "Statut": data.status }),
+    };
+
+    const response = await fetch(`/api/airtable/${encodedTable}/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields,
+        typecast: true
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errorMessage = errData.error?.message || response.statusText;
+
+      if (typeof errorMessage === 'string' && errorMessage.includes('Unknown field name')) {
+        console.warn('Field missing in Airtable PM table (update), retrying without extra fields...');
+        const minimalFields: any = {
+          ...(data.leadName && { "Name": data.leadName }),
+          ...(data.date && { "Date & heure": data.date }),
+          ...(data.location && { "Lieu/ type": data.location }),
+          ...(data.status && { "Statut": data.status }),
+        };
+
+        const retryResponse = await fetch(`/api/airtable/${encodedTable}/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fields: minimalFields,
+            typecast: true
+          })
+        });
+
+        if (!retryResponse.ok) {
+           const retryErrData = await retryResponse.json().catch(() => ({}));
+           throw new Error(`Failed to update PM in Airtable (Retry): ${retryErrData.error?.message || retryResponse.statusText}`);
+        }
+        
+        const record = await retryResponse.json();
+        return {
+          id: record.id,
+          leadId: '',
+          leadName: record.fields["Name"] || '',
+          date: record.fields["Date & heure"] || '',
+          location: record.fields["Lieu/ type"] || 'Visio',
+          notes: record.fields["Notes / Objectifs"] || '',
+          status: record.fields["Statut"] || 'Prévu',
+        };
+      }
+      
+      throw new Error(`Failed to update PM in Airtable: ${errorMessage}`);
+    }
+
+    const record = await response.json();
+    return {
+      id: record.id,
+      leadId: '',
+      leadName: record.fields["Name"] || '',
+      date: record.fields["Date & heure"] || '',
+      location: record.fields["Lieu/ type"] || 'Visio',
+      notes: record.fields["Notes / Objectifs"] || '',
+      status: record.fields["Statut"] || 'Prévu',
+    };
+  } catch (error) {
+    console.error('Failed to update PM:', error);
+    throw error;
+  }
 };
 
 export const deletePM = async (id: string): Promise<void> => {
-  const pms = await fetchPMs();
-  const updated = pms.filter(pm => pm.id !== id);
-  localStorage.setItem(PM_STORAGE_KEY, JSON.stringify(updated));
+  if (!isAirtablePMConfigured() || id.startsWith('mock')) {
+    return;
+  }
+
+  const pmTableName = import.meta.env.VITE_AIRTABLE_PM_TABLE_NAME || 'Meetings';
+  const encodedTable = encodeURIComponent(pmTableName);
+
+  try {
+    const response = await fetch(`/api/airtable/${encodedTable}/${id}`, {
+      method: "DELETE"
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete PM from Airtable');
+    }
+  } catch (error) {
+    console.error('Failed to delete PM:', error);
+    throw error;
+  }
 };

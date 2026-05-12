@@ -9,7 +9,8 @@ import {
   TrendingUp,
   Clock,
   Building2,
-  Video
+  Video,
+  Star
 } from 'lucide-react';
 
 interface ReportsProps {
@@ -76,6 +77,7 @@ export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
     });
     const interviewsThisWeek = interviews.filter(i => parseDateLocal(i.date) >= startOfWeek);
     const pmsThisWeek = pms.filter(p => parseDateLocal(p.date) >= startOfWeek);
+    const prioritized = leads.filter(l => l.isPriority).length;
 
     return {
       added: added.length,
@@ -83,7 +85,8 @@ export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
       won: won.length,
       interviews: interviewsThisWeek.length,
       pms: pmsThisWeek.length,
-      total: leads.length
+      total: leads.length,
+      prioritized
     };
   }, [leads, interviews, pms, startOfWeek]);
 
@@ -148,7 +151,22 @@ export function Reports({ leads, interviews = [], pms = [] }: ReportsProps) {
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+          <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Star className="w-12 h-12 text-amber-400 fill-amber-400" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">Prioritaires</p>
+            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.prioritized}</h2>
+            <div className="mt-4 flex items-center gap-2 text-xs text-amber-400 font-medium">
+              <TrendingUp className="w-3 h-3" />
+              <span>Prospects essentiels</span>
+            </div>
+          </motion.div>
+
           <motion.div 
             whileHover={{ y: -4 }}
             className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"

@@ -4,8 +4,9 @@ import { cn, formatDateSafe, getStatusOptions } from '../lib/utils';
 import { useState, useMemo } from 'react';
 import { LeadFormModal } from './LeadFormModal';
 import { ConfirmModal } from './ConfirmModal';
-import { Edit2, Trash2, ChevronDown, Download, Star } from 'lucide-react';
+import { Edit2, Trash2, ChevronDown, Download, Star, Filter, Calendar as CalendarIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { subDays, isAfter, startOfDay, isSameDay } from 'date-fns';
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -57,6 +58,52 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | '30days' | '90days' | 'custom'>('all');
+  const [customDate, setCustomDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const filteredLeads = useMemo(() => {
+    if (dateFilter === 'all') return leads;
+    
+    const now = new Date();
+    const today = startOfDay(now);
+    let threshold: Date | null = null;
+
+    if (dateFilter === 'custom') {
+      const selected = startOfDay(new Date(customDate));
+      return leads.filter(lead => {
+        const activityDateStr = lead.dateContact || lead.dateAjout;
+        if (!activityDateStr) return false;
+        const activityDate = startOfDay(new Date(activityDateStr));
+        return isSameDay(activityDate, selected);
+      });
+    }
+
+    switch (dateFilter) {
+      case 'today':
+        threshold = today;
+        break;
+      case '7days':
+        threshold = subDays(today, 7);
+        break;
+      case '30days':
+        threshold = subDays(today, 30);
+        break;
+      case '90days':
+        threshold = subDays(today, 90);
+        break;
+      default:
+        return leads;
+    }
+
+    if (!threshold) return leads;
+
+    return leads.filter(lead => {
+      const activityDateStr = lead.dateContact || lead.dateAjout;
+      if (!activityDateStr) return false;
+      const activityDate = new Date(activityDateStr);
+      return isAfter(activityDate, threshold) || activityDate.getTime() === threshold.getTime();
+    });
+  }, [leads, dateFilter, customDate]);
 
   const STATUS_OPTIONS = useMemo(() => getStatusOptions(leads), [leads]);
 
@@ -134,10 +181,46 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
     >
       <div className="flex items-center justify-between mb-8 shrink-0">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Leads</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Leads</h1>
+            {leads.filter(l => l.isPriority).length > 0 && (
+              <span className="bg-amber-500/10 text-amber-400 text-xs px-2.5 py-1 rounded-full font-medium border border-amber-500/20 flex items-center gap-1.5">
+                <Star className="w-3 h-3 fill-amber-400" />
+                {leads.filter(l => l.isPriority).length} prioritaire{leads.filter(l => l.isPriority).length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
           <p className="text-slate-400 mt-1 text-sm">Manage and track your active leads.</p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as any)}
+                className="appearance-none bg-slate-800 border border-slate-700 text-slate-200 text-sm pl-9 pr-8 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer transition-all hover:border-slate-600"
+              >
+                <option value="all">Toute l'activité</option>
+                <option value="today">Aujourd'hui</option>
+                <option value="7days">7 derniers jours</option>
+                <option value="30days">30 derniers jours</option>
+                <option value="90days">90 derniers jours</option>
+                <option value="custom">Date exacte...</option>
+              </select>
+              <CalendarIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            </div>
+
+            {dateFilter === 'custom' && (
+              <input
+                type="date"
+                value={customDate}
+                onChange={(e) => setCustomDate(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-slate-200 text-sm px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all hover:border-slate-600"
+              />
+            )}
+          </div>
+
           <button 
             onClick={handleExportExcel}
             className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-slate-600"
@@ -170,7 +253,7 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
-              {leads
+              {filteredLeads
                 .slice()
                 .sort((a, b) => {
                   // Priority sorting first
@@ -258,10 +341,10 @@ export function LeadsTable({ leads, onAddLead, onUpdateLead, onDeleteLead }: Lea
                   </td>
                 </tr>
               ))}
-              {leads.length === 0 && (
+              {filteredLeads.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
-                    No leads found.
+                    {dateFilter === 'all' ? 'No leads found.' : 'Aucune activité trouvée pour cette période.'}
                   </td>
                 </tr>
               )}

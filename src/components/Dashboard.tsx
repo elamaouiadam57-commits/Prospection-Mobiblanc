@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lead, Consultant, ConsultantInterview, ProspectionMeeting } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, Target, Building2, UserCheck, ChevronDown, Clock, Video, Calendar } from 'lucide-react';
+import { Users, Target, Building2, UserCheck, ChevronDown, Clock, Video, Calendar, Star } from 'lucide-react';
 
 interface DashboardProps {
   leads: Lead[];
@@ -103,9 +103,11 @@ export function Dashboard({ leads, consultants = [], interviews = [], pms = [] }
 
   const startOfWeek = getStartOfWeek(new Date());
   const pmsThisWeek = pms.filter(p => parseDateLocal(p.date) >= startOfWeek).length;
+  const prioritizedLeads = leads.filter(l => l.isPriority).length;
 
   const stats = [
     { label: 'Total Prospects', value: totalLeads.toString(), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Prioritaires', value: prioritizedLeads.toString(), icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { label: 'Entreprises', value: uniqueCompanies.size.toString(), icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
     { label: 'Consultants', value: consultants.length.toString(), icon: UserCheck, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
     { label: 'Entretiens', value: interviews.length.toString(), icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10' },
@@ -124,7 +126,7 @@ export function Dashboard({ leads, consultants = [], interviews = [], pms = [] }
           <p className="text-slate-400 mt-1 text-sm">Here's what's happening in your pipeline today.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
           {stats.map((stat, i) => {
             const Icon = stat.icon;
             return (

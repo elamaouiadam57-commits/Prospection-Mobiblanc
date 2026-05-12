@@ -6,9 +6,10 @@ interface SidebarProps {
   currentView: 'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants' | 'prospection-meetings';
   setCurrentView: (view: 'dashboard' | 'table' | 'kanban' | 'reports' | 'consultants' | 'prospection-meetings') => void;
   onLogout: () => void;
+  priorityCount?: number;
 }
 
-export function Sidebar({ currentView, setCurrentView, onLogout }: SidebarProps) {
+export function Sidebar({ currentView, setCurrentView, onLogout, priorityCount = 0 }: SidebarProps) {
   const navItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'table', label: 'Leads Table', icon: Users },
@@ -53,7 +54,12 @@ export function Sidebar({ currentView, setCurrentView, onLogout }: SidebarProps)
                 />
               )}
               <Icon className="w-4 h-4 relative z-10" />
-              <span className="relative z-10">{item.label}</span>
+              <span className="relative z-10 flex-1">{item.label}</span>
+              {item.id === 'table' && priorityCount > 0 && (
+                <span className="relative z-10 bg-amber-500 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-[18px] text-center">
+                  {priorityCount}
+                </span>
+              )}
             </button>
           );
         })}

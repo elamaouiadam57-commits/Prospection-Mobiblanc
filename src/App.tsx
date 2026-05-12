@@ -14,6 +14,12 @@ import {
   createLead, 
   updateLead, 
   deleteLead,
+  fetchPMs,
+  createPM,
+  updatePM,
+  deletePM
+} from './services/airtable';
+import {
   fetchConsultants,
   fetchInterviews,
   createConsultant,
@@ -21,12 +27,8 @@ import {
   deleteConsultant,
   createInterview,
   updateInterview,
-  deleteInterview,
-  fetchPMs,
-  createPM,
-  updatePM,
-  deletePM
-} from './services/airtable';
+  deleteInterview
+} from './services/api';
 import { Consultants } from './components/Consultants';
 import { ProspectionMeetings } from './components/ProspectionMeetings';
 
@@ -144,11 +146,8 @@ export default function App() {
     try {
       await deleteLead(leadId);
       setLeads(prev => prev.filter(lead => lead.id !== leadId));
-      // Also cleanup PMs associated with this lead
+      // Also locally cleanup PMs associated with this lead in the UI state
       setPMs(prev => prev.filter(pm => pm.leadId !== leadId));
-      // Usually, we'd have a service method to cleanup, but it's okay for now
-      const currentPMs = await fetchPMs();
-      localStorage.setItem('crm_pm_data', JSON.stringify(currentPMs.filter(p => p.leadId !== leadId)));
     } catch (error) {
       console.error("Failed to delete lead", error);
       throw error;
@@ -276,6 +275,7 @@ export default function App() {
         currentView={currentView} 
         setCurrentView={setCurrentView} 
         onLogout={() => setIsAuthenticated(false)}
+        priorityCount={leads.filter(l => l.isPriority).length}
       />
       
       <main className="flex-1 flex flex-col min-w-0 bg-slate-900">
