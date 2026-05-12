@@ -54,7 +54,7 @@ export const fetchLeads = async (): Promise<Lead[]> => {
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur ${response.status}: ${errData.error?.message || errData.error || response.statusText}`);
+      throw new Error(`Table "${tableName}": ${errData.error?.message || errData.error || response.statusText}`);
     }
 
     const data = await response.json();
@@ -381,7 +381,7 @@ export const fetchPMs = async (): Promise<ProspectionMeeting[]> => {
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      console.warn('Meeting table maybe not exist, returning empty');
+      console.warn(`Meeting table "${pmTableName}" may not exist or is inaccessible. Error: ${errData.error?.message || response.statusText}`);
       return [];
     }
 

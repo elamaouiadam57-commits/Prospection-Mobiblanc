@@ -57,6 +57,8 @@ async function startServer() {
     const subPath = req.params[0];
     const url = `https://api.airtable.com/v0/${baseId}/${subPath}${req.url.includes('?') ? '?' + req.url.split('?')[1] : ''}`;
 
+    console.log(`[Airtable Proxy] ${req.method} ${subPath}`);
+
     try {
       const response = await fetch(url, {
         method: req.method,
