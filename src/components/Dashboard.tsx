@@ -105,9 +105,11 @@ export function Dashboard({ leads, pms = [] }: DashboardProps) {
 
   const stats = [
     { label: 'Total Prospects', value: totalLeads.toString(), icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Gagnés', value: wonLeads.toString(), icon: Target, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { label: 'Taux Succès', value: `${winRate}%`, icon: Target, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
     { label: 'Prioritaires', value: prioritizedLeads.toString(), icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { label: 'Entreprises', value: uniqueCompanies.size.toString(), icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'RDV de la semaine', value: pmsThisWeek.toString(), icon: Calendar, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+    { label: 'RDV Semaine', value: pmsThisWeek.toString(), icon: Calendar, color: 'text-pink-400', bg: 'bg-pink-500/10' },
   ];
 
   return (
@@ -115,14 +117,14 @@ export function Dashboard({ leads, pms = [] }: DashboardProps) {
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-8 max-w-7xl mx-auto"
+        className="p-6 max-w-7xl mx-auto"
       >
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Overview</h1>
-          <p className="text-slate-400 mt-1 text-sm">Here's what's happening in your pipeline today.</p>
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-slate-50 tracking-tight">Vue d'ensemble</h1>
+          <p className="text-slate-400 mt-1 text-xs">Voici l'état actuel de votre pipeline commercial.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {stats.map((stat, i) => {
             const Icon = stat.icon;
             return (
@@ -131,15 +133,17 @@ export function Dashboard({ leads, pms = [] }: DashboardProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg shadow-black/10"
+                className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg shadow-black/20 flex flex-col justify-between hover:border-slate-600 transition-colors"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
-                    <Icon className="w-5 h-5" />
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color} shrink-0`}>
+                    <Icon className="w-3.5 h-3.5" />
                   </div>
+                  <h3 className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{stat.label}</h3>
                 </div>
-                <h3 className="text-slate-400 text-sm font-medium">{stat.label}</h3>
-                <p className="text-2xl font-semibold text-slate-50 mt-1">{stat.value}</p>
+                <div>
+                  <p className="text-2xl font-bold text-slate-50 tracking-tight leading-none">{stat.value}</p>
+                </div>
               </motion.div>
             );
           })}

@@ -147,79 +147,104 @@ export function Reports({ leads, pms = [] }: ReportsProps) {
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <motion.div 
-            whileHover={{ y: -4 }}
-            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden group hover:border-amber-500/30 transition-colors"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Star className="w-12 h-12 text-amber-400 fill-amber-400" />
+            <div className="absolute -right-2 -top-2 w-16 h-16 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-colors" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+                <Star className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Prioritaires</p>
             </div>
-            <p className="text-slate-400 text-sm font-medium">Prioritaires</p>
-            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.prioritized}</h2>
-            <div className="mt-4 flex items-center gap-2 text-xs text-amber-400 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>Prospects essentiels</span>
+            <div className="flex items-baseline gap-1.5">
+              <h2 className="text-2xl font-bold text-slate-50">{thisWeekStats.prioritized}</h2>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center gap-1.5 text-[9px] text-amber-400 uppercase font-bold tracking-tight">
+              <TrendingUp className="w-2.5 h-2.5" />
+              <span>Dossiers critiques</span>
             </div>
           </motion.div>
 
           <motion.div 
-            whileHover={{ y: -4 }}
-            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden group hover:border-blue-500/30 transition-colors"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <UserPlus className="w-12 h-12 text-blue-400" />
+            <div className="absolute -right-2 -top-2 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-colors" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+                <UserPlus className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Nouveaux</p>
             </div>
-            <p className="text-slate-400 text-sm font-medium">Nouveaux Prospects</p>
-            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.added}</h2>
-            <div className="mt-4 flex items-center gap-2 text-xs text-blue-400 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>Ajoutés cette semaine</span>
+            <div className="flex items-baseline gap-1.5">
+              <h2 className="text-2xl font-bold text-slate-50">{thisWeekStats.added}</h2>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center gap-1.5 text-[9px] text-blue-400 uppercase font-bold tracking-tight">
+              <TrendingUp className="w-2.5 h-2.5" />
+              <span>Acquisition active</span>
             </div>
           </motion.div>
 
           <motion.div 
-            whileHover={{ y: -4 }}
-            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden group hover:border-amber-500/30 transition-colors"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Clock className="w-12 h-12 text-amber-400" />
+            <div className="absolute -right-2 -top-2 w-16 h-16 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-colors" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
+                <Clock className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Contactés</p>
             </div>
-            <p className="text-slate-400 text-sm font-medium">Prospects Contactés</p>
-            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.contacted}</h2>
-            <div className="mt-4 flex items-center gap-2 text-xs text-amber-400 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>Actions de contact</span>
+            <div className="flex items-baseline gap-1.5">
+              <h2 className="text-2xl font-bold text-slate-50">{thisWeekStats.contacted}</h2>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center gap-1.5 text-[9px] text-amber-400 uppercase font-bold tracking-tight">
+              <TrendingUp className="w-2.5 h-2.5" />
+              <span>Actions engagées</span>
             </div>
           </motion.div>
 
           <motion.div 
-            whileHover={{ y: -4 }}
-            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden group hover:border-emerald-500/30 transition-colors"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+            <div className="absolute -right-2 -top-2 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Gagnés</p>
             </div>
-            <p className="text-slate-400 text-sm font-medium">Prospects Gagnés</p>
-            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.won}</h2>
-            <div className="mt-4 flex items-center gap-2 text-xs text-emerald-400 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>Succès cette semaine</span>
+            <div className="flex items-baseline gap-1.5">
+              <h2 className="text-2xl font-bold text-slate-50">{thisWeekStats.won}</h2>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center gap-1.5 text-[9px] text-emerald-400 uppercase font-bold tracking-tight">
+              <TrendingUp className="w-2.5 h-2.5" />
+              <span>Objectifs atteints</span>
             </div>
           </motion.div>
 
           <motion.div 
-            whileHover={{ y: -4 }}
-            className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-xl relative overflow-hidden group hover:border-pink-500/30 transition-colors"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Calendar className="w-12 h-12 text-pink-400" />
+            <div className="absolute -right-2 -top-2 w-16 h-16 bg-pink-500/5 rounded-full blur-xl group-hover:bg-pink-500/10 transition-colors" />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-pink-500/10 text-pink-400">
+                <Calendar className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">RDV</p>
             </div>
-            <p className="text-slate-400 text-sm font-medium">RDV de la semaine</p>
-            <h2 className="text-4xl font-bold text-slate-50 mt-2">{thisWeekStats.pms}</h2>
-            <div className="mt-4 flex items-center gap-2 text-xs text-pink-400 font-medium">
-              <TrendingUp className="w-3 h-3" />
-              <span>RDV programmés</span>
+            <div className="flex items-baseline gap-1.5">
+              <h2 className="text-2xl font-bold text-slate-50">{thisWeekStats.pms}</h2>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700/50 flex items-center gap-1.5 text-[9px] text-pink-400 uppercase font-bold tracking-tight">
+              <TrendingUp className="w-2.5 h-2.5" />
+              <span>Volume hebdo</span>
             </div>
           </motion.div>
         </div>
